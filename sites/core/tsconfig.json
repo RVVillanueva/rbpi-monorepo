@@ -1,0 +1,47 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "tsBuildInfoFile": ".cache/tsbuildinfo",
+    "skipLibCheck": true,
+    "target": "es2022",
+    "module": "esnext",
+    "noEmit": true,
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable",
+    ],
+    "types": [  
+      "bun",
+      "vite/client",
+      "@cloudflare/workers-types/experimental",
+      "@cloudflare/vitest-pool-workers/types"
+    ],
+    "paths": {
+      "@platform/*": ["./corePlatform/*"],
+      "@legacy/*": ["./legacy/*"],
+      "@schema/*": ["./db/core/schema/*"],
+      "@components/*": ["./src/components/*"],
+      "@/*": ["./src/*"],
+      "~/*": ["./*"],
+    },
+
+    "rootDirs": [
+      ".",
+      "./.react-router/types"
+    ]
+  },
+
+  "exclude": [
+    "dist",
+    "node_modules",
+    ".wrangler",
+    ".react-router",
+    "core/gen",
+    "db/core/schema/index.ts",
+    ".cache"
+  ]
+}

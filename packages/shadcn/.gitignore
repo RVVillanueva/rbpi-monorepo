@@ -1,0 +1,40 @@
+# Dependencies
+**/node_modules
+
+# Build outputs
+**/dist
+**/.next
+**/.turbo
+**/build
+**/.cache
+**/.output
+
+# Payload
+**/public/media
+
+# Env files
+**/.dev.vars
+**/.dev.vars.*
+!**/.dev.vars.example
+**/.env
+**/.env.local
+**/.env.production
+!**/.env.example
+
+# Tailwind
+**/public/_root.css
+
+# pnpm
+**/.pnpm-store
+
+# TypeScript
+**/tsconfig.tsbuildinfo
+**/*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+**/*.log
+**/logs

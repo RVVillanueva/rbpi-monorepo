@@ -1,0 +1,85 @@
+name = 'core'
+main = 'dist/_worker.js'
+compatibility_date = '2026-06-02'
+compatibility_flags = ['nodejs_compat', 'experimental']
+
+[assets]
+directory = 'dist'
+binding = 'ASSETS'
+
+[observability]
+enabled = true
+
+[[hyperdrive]]
+binding = "LEGACY"
+id = ""
+
+[[hyperdrive]]
+binding = "CORE"
+id = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "core-d1"
+database_id = "288fe3ac-a92c-4744-9a46-16cfd5127b23"
+migrations_dir = "./db/main/migrations"
+
+[dev]
+port = 5000
+
+[vars]
+WORKER_ENV = 'production'
+
+[env.development]
+[env.development.vars]
+WORKER_ENV = 'development'
+
+[[env.development.hyperdrive]]
+binding = "LEGACY"
+id = ""
+
+[[env.development.hyperdrive]]
+binding = "CORE"
+id = ""
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "core-d1"
+database_id = "288fe3ac-a92c-4744-9a46-16cfd5127b23"
+migrations_dir = "./db/main/migrations"
+
+[env.staging]
+[env.staging.vars]
+WORKER_ENV = 'staging'
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "core-d1"
+database_id = "288fe3ac-a92c-4744-9a46-16cfd5127b23"
+migrations_dir = "./db/main/migrations"
+
+[[env.staging.hyperdrive]]
+binding = "LEGACY"
+id = ""
+
+[[env.staging.hyperdrive]]
+binding = "CORE"
+id = ""
+
+[env.test]
+[env.test.vars]
+WORKER_ENV = 'test'
+
+[[env.test.d1_databases]]
+binding = "DB"
+database_name = "core-d1"
+database_id = "288fe3ac-a92c-4744-9a46-16cfd5127b23"
+migrations_dir = "./db/main/migrations"
+
+[[env.test.hyperdrive]]
+binding = "LEGACY"
+id = ""
+
+[[env.test.hyperdrive]]
+binding = "CORE"
+id = ""

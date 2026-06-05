@@ -3,7 +3,6 @@ import { withPageProps } from '@/lib/page'
 
 import type { Route } from './+types/_root._index'
 import { useT } from '@/context/hono'
-import { hc } from 'hono/client'
 
 export const loader = async (args: Route.LoaderArgs) => {
   const { hono } = args.context

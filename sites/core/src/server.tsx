@@ -5,8 +5,8 @@ import { createHonoServer } from 'react-router-hono-server/cloudflare'
 import { betterAuthHandler } from './auth'
 import { betterAuthMiddleware, core, loggerMiddleware } from './middleware'
 
-import { legacyRpc } from '~/platformLegacy/rpc'
-import { coreRpc } from '~/platformCore/rpc'
+import { legacyRpc } from '~/platform-legacy/rpc'
+import { coreRpc } from '~/platform-core/rpc'
 
 import * as Sentry from '@sentry/cloudflare'
 

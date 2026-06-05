@@ -1,6 +1,6 @@
 
 declare module RBPICore {
-  type LegacyRPC = ReturnType<typeof import('~/legacy/rpc/handlers').bootstrap>
-  type CorePlatformRPC = ReturnType<typeof import('~/corePlatform/rpc/handlers').bootstrap>
+  type LegacyRPC = ReturnType<typeof import('~/platform-legacy/rpc/handlers').bootstrap>
+  type CorePlatformRPC = ReturnType<typeof import('~/platform-core/rpc/handlers').bootstrap>
 }
 

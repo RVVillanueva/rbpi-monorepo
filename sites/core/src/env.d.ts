@@ -33,6 +33,14 @@ interface CloudflareEnv {
   readonly CLOUDFLARE_D1_ID: string
   readonly CLOUDFLARE_D1_TOKEN: string
   readonly SENTRY_DSN: string
+  readonly RESEND_KEY: string
+  readonly EMAIL_FROM: string
+  readonly EMAIL_USER: string
+  readonly EMAIL_PASS: string
+  readonly EMAIL_HOST: string
+  readonly GOOGLE_CLIENT_ID: string
+  readonly GOOGLE_CLIENT_SECRET: string
+  readonly EMAIL_PORT: number
 }
 
 declare module 'bun' {

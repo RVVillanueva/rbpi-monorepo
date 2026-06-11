@@ -2,10 +2,9 @@ import { Outlet } from "react-router";
 
 
 
-export default function Layout() {
+export default function DashboardsLayout() {
   return (
     <>
-      Dashboard Layout
       <Outlet />
     </>
   )

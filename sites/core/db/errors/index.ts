@@ -1,54 +1,121 @@
-import { DrizzleError, DrizzleQueryError } from 'drizzle-orm'
+import { DrizzleQueryError } from 'drizzle-orm/errors'
 
-const unwrap = (err: unknown): unknown => {
-  if (err instanceof DrizzleQueryError) return err.cause ?? err
-  if (err instanceof DrizzleError) return err.cause ?? err
-  return err
+export class DatabaseError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message)
+    this.name = 'DatabaseError'
+  }
 }
 
-const isSqliteMsg = (err: unknown, msg: string) =>
-  err instanceof Error && err.message.includes(msg)
-
-const isPgCode = (err: unknown, code: string) =>
-  err instanceof Error && 'code' in err && (err as Error & { code: string }).code === code
-
-const check = (err: unknown, sqlite: string, pg: string) => {
-  const e = unwrap(err)
-  return isSqliteMsg(e, sqlite) || isPgCode(e, pg)
+/** A query returned no rows where at least one was expected. */
+export class NotFoundError extends DatabaseError {
+  constructor(public readonly entity: string, public readonly id?: string | number) {
+    super(id !== undefined ? `${entity} with id '${id}' not found.` : `${entity} not found.`)
+    this.name = 'NotFoundError'
+  }
 }
 
-export const isDuplicateError = (err: unknown) =>
-  check(err, 'UNIQUE constraint failed', '23505')
-
-export const isForeignKeyError = (err: unknown) =>
-  check(err, 'FOREIGN KEY constraint failed', '23503')
-
-export const isNotNullError = (err: unknown) =>
-  check(err, 'NOT NULL constraint failed', '23502')
-
-export const isCheckConstraintError = (err: unknown) =>
-  check(err, 'CHECK constraint failed', '23514')
-
-export const isDataTooLongError = (err: unknown) =>
-  check(err, 'string or blob too big', '22001')
-
-export const isInvalidTypeError = (err: unknown) =>
-  check(err, 'datatype mismatch', '22P02')
-
-export const isUndefinedTableError = (err: unknown) =>
-  check(err, 'no such table', '42P01')
-
-export const isConnectionError = (err: unknown) => {
-  const e = unwrap(err)
-  if (!(e instanceof Error)) return false
-  const code = 'code' in e ? (e as Error & { code: string }).code : undefined
-  return ['ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND'].some(
-    c => e.message.includes(c) || code === c
-  )
+/** A query returned more rows than expected. */
+export class TooManyResultsError extends DatabaseError {
+  constructor(public readonly entity: string, public readonly expected: number, public readonly received: number) {
+    super(`Expected ${expected} row(s) for ${entity}, but got ${received}.`)
+    this.name = 'TooManyResultsError'
+  }
 }
 
-export const isDeadlockError = (err: unknown) =>
-  isPgCode(unwrap(err), '40P01')
+/** A record with the same unique key already exists. */
+export class DuplicateEntryError extends DatabaseError {
+  constructor(public readonly entity: string, public readonly field?: string) {
+    super(field ? `${entity} with the same '${field}' already exists.` : `Duplicate ${entity} entry.`)
+    this.name = 'DuplicateEntryError'
+  }
+}
 
-export const isTransactionError = (err: unknown) =>
-  check(err, 'cannot start a transaction within a transaction', '25P02')
+/** A required foreign key reference does not exist. */
+export class ForeignKeyError extends DatabaseError {
+  constructor(public readonly entity: string, public readonly referencedEntity?: string) {
+    super(
+      referencedEntity
+        ? `${entity} references a ${referencedEntity} that does not exist.`
+        : `${entity} contains an invalid foreign key reference.`
+    )
+    this.name = 'ForeignKeyError'
+  }
+}
+
+/** A non-nullable column received a null value. */
+export class NullConstraintError extends DatabaseError {
+  constructor(public readonly entity: string, public readonly field?: string) {
+    super(field ? `Field '${field}' on ${entity} cannot be null.` : `A required field on ${entity} is null.`)
+    this.name = 'NullConstraintError'
+  }
+}
+
+/** The database connection was refused or timed out. */
+export class ConnectionError extends DatabaseError {
+  constructor(message = 'Failed to connect to the database.') {
+    super(message)
+    this.name = 'ConnectionError'
+  }
+}
+
+/** A query exceeded its allowed execution time. */
+export class QueryTimeoutError extends DatabaseError {
+  constructor(message = 'Database query timed out.') {
+    super(message)
+    this.name = 'QueryTimeoutError'
+  }
+}
+
+const MYSQL_CODE_MAP: Record<string, () => DatabaseError> = {
+  ER_DUP_ENTRY:            () => new DuplicateEntryError('Record'),
+  ER_NO_REFERENCED_ROW_2:  () => new ForeignKeyError('Record'),
+  ER_ROW_IS_REFERENCED_2:  () => new ForeignKeyError('Record'),
+  ER_BAD_NULL_ERROR:       () => new NullConstraintError('Record'),
+  ECONNREFUSED:            () => new ConnectionError(),
+  ETIMEDOUT:               () => new QueryTimeoutError(),
+  ER_LOCK_WAIT_TIMEOUT:    () => new QueryTimeoutError('Lock wait timeout exceeded.'),
+}
+
+const POSTGRES_CODE_MAP: Record<string, () => DatabaseError> = {
+  '23505': () => new DuplicateEntryError('Record'),  // unique_violation
+  '23503': () => new ForeignKeyError('Record'),      // foreign_key_violation
+  '23502': () => new NullConstraintError('Record'),  // not_null_violation
+  '08006': () => new ConnectionError(),              // connection_failure
+  '57014': () => new QueryTimeoutError(),            // query_canceled
+}
+
+const SQLITE_CODE_MAP: Record<string, () => DatabaseError> = {
+  SQLITE_CONSTRAINT_UNIQUE:     () => new DuplicateEntryError('Record'),
+  SQLITE_CONSTRAINT_FOREIGNKEY: () => new ForeignKeyError('Record'),
+  SQLITE_CONSTRAINT_NOTNULL:    () => new NullConstraintError('Record'),
+}
+
+export function normalizeDrizzleError(err: unknown): DatabaseError {
+  if (!(err instanceof DrizzleQueryError)) {
+    if (err instanceof DatabaseError) return err
+    const message = err instanceof Error ? err.message : 'An unknown database error occurred.'
+    return new DatabaseError(message, err)
+  }
+
+  const cause = err.cause as any
+  const code: string | undefined = cause?.code
+
+  if (!code) return new DatabaseError(err.message, err)
+
+  const fromMySQL    = MYSQL_CODE_MAP[code]
+  const fromPostgres = POSTGRES_CODE_MAP[code]
+  const fromSQLite   = SQLITE_CODE_MAP[code]
+
+  const factory = fromMySQL ?? fromPostgres ?? fromSQLite
+  if (factory) return factory()
+
+  return new DatabaseError(`Database error [${code}]: ${cause?.message ?? err.message}`, err)
+}
+
+export const isNotFound       = (e: unknown): e is NotFoundError       => e instanceof NotFoundError
+export const isDuplicateEntry = (e: unknown): e is DuplicateEntryError => e instanceof DuplicateEntryError
+export const isForeignKey     = (e: unknown): e is ForeignKeyError     => e instanceof ForeignKeyError
+export const isNullConstraint = (e: unknown): e is NullConstraintError => e instanceof NullConstraintError
+export const isConnection     = (e: unknown): e is ConnectionError     => e instanceof ConnectionError
+export const isQueryTimeout   = (e: unknown): e is QueryTimeoutError   => e instanceof QueryTimeoutError

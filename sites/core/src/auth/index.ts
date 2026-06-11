@@ -3,7 +3,7 @@ import { users } from '~/db/core/schema/users'
 
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { admin, testUtils } from 'better-auth/plugins'
+import { admin, testUtils, anonymous } from 'better-auth/plugins'
 
 import { createFactory } from 'hono/factory'
 import { Database } from '~/db/core'
@@ -16,6 +16,7 @@ export const createAuthFromDatabase = (db: Database, env: CloudflareBindings) =>
     plugins: [
       admin(),
       testUtils(),
+      anonymous(),
     ],
 
     database: drizzleAdapter(db, {
@@ -33,9 +34,19 @@ export const createAuthFromDatabase = (db: Database, env: CloudflareBindings) =>
       enabled: false,
     },
 
-    socialProviders: {},
+    socialProviders: {
+      google: {
+        clientId: [
+          env.GOOGLE_CLIENT_ID,
+        ],
+
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      },
+    },
 
     advanced: {
+      useSecureCookies: true,
+
       cookies: {
         session_token: {
           name: 'token',
@@ -64,17 +75,18 @@ export const createAuthFromDatabase = (db: Database, env: CloudflareBindings) =>
     // https://better-auth.com/docs/concepts/database#core-schema
 
     user: {
-      additionalFields: {},
+      additionalFields: {
+        username: {
+          type: 'string',
+          fieldName: 'username',
+          required: true,
+          index: true,
+        },
+      },
     },
 
     session: {
-      additionalFields: {
-        activeSpace: {
-          type: 'number',
-          required: false,
-          input: false,
-        },
-      },
+      additionalFields: {},
     },
 
     account: { 

@@ -2,6 +2,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
 
 import { bootstrap } from './handlers'
+import { StatusCodes } from 'http-status-codes';
 
 const legacyRpc = new OpenAPIHono<HonoCloudflare>()
   .route('/_legacy/rpc', bootstrap())

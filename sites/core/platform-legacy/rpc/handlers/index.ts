@@ -2,11 +2,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
 
 import * as helloRpc from './hello-rpc'
-import * as mainRpc from './main-rpc'
+import * as otpRpc from './otp-rpc'
 
 export const handlers = { 
-  ...helloRpc, 
-  ...mainRpc,
+  ...helloRpc,
+  ...otpRpc,
 }
 
 export const bootstrap = () => 

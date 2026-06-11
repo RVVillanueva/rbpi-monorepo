@@ -7,6 +7,10 @@ compatibility_flags = ['nodejs_compat', 'experimental']
 directory = 'dist'
 binding = 'ASSETS'
 
+[[kv_namespaces]]
+binding = "KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
 [observability]
 enabled = true
 
@@ -34,6 +38,10 @@ WORKER_ENV = 'production'
 [env.development.vars]
 WORKER_ENV = 'development'
 
+[[env.development.kv_namespaces]]
+binding = "KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
 [[env.development.hyperdrive]]
 binding = "LEGACY"
 id = ""
@@ -52,6 +60,10 @@ migrations_dir = "./db/main/migrations"
 [env.staging.vars]
 WORKER_ENV = 'staging'
 
+[[env.staging.kv_namespaces]]
+binding = "KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "core-d1"
@@ -69,6 +81,10 @@ id = ""
 [env.test]
 [env.test.vars]
 WORKER_ENV = 'test'
+
+[[env.test.kv_namespaces]]
+binding = "KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 [[env.test.d1_databases]]
 binding = "DB"

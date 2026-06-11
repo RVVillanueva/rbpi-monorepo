@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 const queryClient = new QueryClient()
 
 import { Route } from './+types/root'
+import { RBPICoreProvider } from './context/RBPICoreProvider';
 
 export const loader = (args: Route.LoaderArgs) => {
   const { hono } = args.context
@@ -17,11 +18,13 @@ const Wrapper = (props: PropsWithChildren) => {
   const { rpc } = useLoaderData<typeof loader>()
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Root>{ props.children }</Root>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <RBPICoreProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Root>{ props.children }</Root>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </RBPICoreProvider>
   )
 }
 

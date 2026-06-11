@@ -1,13 +1,10 @@
 
 import { drizzle, type MySql2Database } from 'drizzle-orm/mysql2'
-import mysql from 'mysql2/promise'
 
-import * as schema from './migrations/schema'
+import * as schema from './schema'
 
 export const createLegacyDatabase = async (env: CloudflareBindings) => {
-  const client = await mysql.createConnection(env.LEGACY.connectionString)
-  
-  return drizzle(client, {
+  return drizzle(env.LEGACY.connectionString, {
     mode: 'default',
     schema,
   })

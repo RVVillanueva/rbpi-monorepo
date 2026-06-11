@@ -39,7 +39,6 @@ export const loggerMiddleware = createMiddleware<HonoCloudflare>(async (ctx, nex
   console.log(`[${new Date().toJSON()}] ${method} ${pathname} ${status} ${ms}ms - ${ip}`)
 })
 
-
 // Middleware to handle authentication using BetterAuth and D1 database
 export const betterAuthMiddleware = createMiddleware<HonoCloudflare>(async (ctx, next) => {
   try {

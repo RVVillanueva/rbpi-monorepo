@@ -8,11 +8,30 @@ postgres-core.migrate:
 postgres-core.studio:
 	bunx drizzle-kit studio --config ./db/core/drizzle.config.ts
 
-mysql2-legacy.generate: 
+postgres-core.up:
+	bunx drizzle-kit up --config ./db/core/drizzle.config.ts
+
+mysql2-legacy.generate:
 	bunx drizzle-kit generate --config ./db/legacy/drizzle.config.ts
+	find ./db/legacy/migrations -name "migration.sql" | xargs sed -i "s/CREATE ALGORITHM/CREATE OR REPLACE ALGORITHM/g"
 
 mysql2-legacy.migrate:
 	bunx drizzle-kit migrate --config ./db/legacy/drizzle.config.ts
+
+mysql2-legacy.push:
+	bunx drizzle-kit push --config ./db/legacy/drizzle.config.ts
+
+mysql2-legacy.up:
+	bunx drizzle-kit up --config ./db/legacy/drizzle.config.ts
+
+mysql2-legacy.drop:
+	bunx drizzle-kit drop --config ./db/legacy/drizzle.config.ts
+
+mysql2-legacy.check:
+	bunx drizzle-kit check --config ./db/legacy/drizzle.config.ts
+
+mysql2-legacy.pull:
+	bunx drizzle-kit pull --config ./db/legacy/drizzle.config.ts
 
 mysql2-legacy.studio:
 	bunx drizzle-kit studio --config ./db/legacy/drizzle.config.ts
@@ -25,6 +44,7 @@ mysql2-legacy.introspect:
 
 wrangler.deploy:
 	pnpx wrangler deploy
+	
 wrangler.tail:
 	pnpx wrangler tail
 
@@ -45,3 +65,8 @@ dev:
 
 build:
 	CLOUDFLARE_ENV=production pnpm build
+
+email.dev:
+	pnpm email.dev
+
+boot: dev email.dev

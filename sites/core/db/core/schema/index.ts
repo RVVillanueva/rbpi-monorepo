@@ -1,3 +1,4 @@
-export * from './auth'
-export * from './users'
-export * from './dashboards'
+export * from './auth';
+export * from './dashboards';
+export * from './logs';
+export * from './users';

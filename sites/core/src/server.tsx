@@ -1,14 +1,14 @@
-import { Hono } from 'hono'
-import { contextStorage } from 'hono/context-storage'
-import { createHonoServer } from 'react-router-hono-server/cloudflare'
+import { Hono } from 'hono';
+import { contextStorage } from 'hono/context-storage';
+import { createHonoServer } from 'react-router-hono-server/cloudflare';
 
-import { betterAuthHandler } from './auth'
-import { betterAuthMiddleware, core, loggerMiddleware } from './middleware'
+import { betterAuthHandler } from './auth';
+import { betterAuthMiddleware, core, loggerMiddleware } from './middleware';
 
-import { legacyRpc } from '~/platform-legacy/rpc'
-import { coreRpc } from '~/platform-core/rpc'
+import { coreRpc } from '~/platform-core/rpc';
+import { legacyRpc } from '~/platform-legacy/rpc';
 
-import * as Sentry from '@sentry/cloudflare'
+import * as Sentry from '@sentry/cloudflare';
 
 const reactRouter = await createHonoServer<HonoCloudflare>({
   getLoadContext(hono) {

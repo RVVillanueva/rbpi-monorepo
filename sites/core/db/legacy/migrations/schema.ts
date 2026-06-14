@@ -1,5 +1,5 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, int, smallint, char, customType, decimal, mediumint, varchar, tinyint, date, timestamp, datetime, bigint, float, text, mediumtext, boolean, binary, blob, time, longtext, double, index, uniqueIndex, mysqlView } from "drizzle-orm/mysql-core"
-import { sql } from "drizzle-orm"
+import { sql } from "drizzle-orm";
+import { bigint, binary, blob, boolean, char, customType, date, datetime, decimal, double, float, index, int, longtext, mediumint, mediumtext, mysqlTable, mysqlView, smallint, text, time, timestamp, tinyint, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 export const generalClientsbeneficiary = mysqlTable("general_clientsbeneficiary", {
 	clientid: bigint({ unsigned: true, mode: 'number' }).notNull(),

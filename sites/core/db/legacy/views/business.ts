@@ -1,22 +1,21 @@
 import { eq, inArray, notInArray, sql } from "drizzle-orm";
 import { mysqlView } from "drizzle-orm/mysql-core";
 
-import { 
-  acctngBudget,
-  acctngGlaccounts, 
-  acctngJournaldetails, 
-  acctngJournals, 
-  generalBranches,
-  lendingLoanclassifications,
-  lendingLoandetails,
-  lendingLoanproducts,
-  lendingLoansecurities,
-  lendingPaymentdetails,
-  lendingPayments,
-  lendingPaymentsor,
-  savingsAccounts,
-  savingsProducts,
-  savingsSsaplacementdetails,
+import {
+    acctngBudget,
+    acctngGlaccounts,
+    acctngJournaldetails,
+    acctngJournals,
+    generalBranches,
+    lendingLoanclassifications,
+    lendingLoandetails,
+    lendingLoanproducts,
+    lendingLoansecurities,
+    lendingPaymentdetails,
+    lendingPayments,
+    lendingPaymentsor,
+    savingsAccounts,
+    savingsSsaplacementdetails
 } from "~/db/legacy/migrations/schema";
 
 export type GenBranch = typeof branchesView.$inferSelect

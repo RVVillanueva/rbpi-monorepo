@@ -1,14 +1,12 @@
 import {
-  boolean,
-  integer,
-  jsonb,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  serial,
-} from 'drizzle-orm/pg-core'
-import { users } from './users'
+    integer,
+    jsonb,
+    pgTable,
+    serial,
+    text,
+    timestamp
+} from 'drizzle-orm/pg-core';
+import { users } from './users';
 
 export const sessions = pgTable('sessions', {
   id: text('id').notNull().primaryKey(),

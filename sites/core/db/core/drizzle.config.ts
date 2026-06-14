@@ -1,6 +1,6 @@
 import {
-  defineConfig
-} from 'drizzle-kit'
+    defineConfig
+} from 'drizzle-kit';
 
 export default defineConfig({
   out: './db/core/migrations',

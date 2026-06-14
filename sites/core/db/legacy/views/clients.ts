@@ -1,6 +1,6 @@
+import { sql } from "drizzle-orm";
 import { mysqlView } from "drizzle-orm/mysql-core";
 import { generalAddress, generalClients } from "../schema";
-import { sql } from "drizzle-orm";
 
 export type GenClient = typeof clientsView.$inferSelect
 

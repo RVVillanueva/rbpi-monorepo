@@ -1,4 +1,4 @@
-import { eq, getColumns, getTableColumns, getTableName, getViewName } from "drizzle-orm";
+import { eq, getViewName } from "drizzle-orm";
 
 import { err, ok } from "neverthrow";
 import { NotFoundError } from "~/db/errors";

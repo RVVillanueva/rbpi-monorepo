@@ -13,7 +13,13 @@ postgres-core.up:
 
 mysql2-legacy.generate:
 	bunx drizzle-kit generate --config ./db/legacy/drizzle.config.ts
-	find ./db/legacy/migrations -name "migration.sql" | xargs sed -i "s/CREATE ALGORITHM/CREATE OR REPLACE ALGORITHM/g"
+	$(MAKE) mysql2-legacy.patch
+
+mysql2-legacy.patch:
+	find ./db/legacy/migrations -name "migration.sql" \
+		| xargs sed -i \
+			-e "s/CREATE ALGORITHM/CREATE OR REPLACE ALGORITHM/g" \
+			-e "s/^CREATE VIEW/CREATE OR REPLACE VIEW/g"
 
 mysql2-legacy.migrate:
 	bunx drizzle-kit migrate --config ./db/legacy/drizzle.config.ts

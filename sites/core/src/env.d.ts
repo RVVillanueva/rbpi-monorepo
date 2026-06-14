@@ -14,8 +14,10 @@ declare interface HonoVariables {
   session: HonoBetterAuthSession['session'] | null
   rpc: ConnectRPCHonoContext
   locale: ReturnType<typeof import('~/locales').getT>
-  core: import('~/db/core').Database
-  legacy: import('~/db/legacy').LegacyDatabase
+  db: {
+    core: import('~/db/core').Database
+    legacy: import('~/db/legacy').LegacyDatabase
+  }
 }
 
 interface CloudflareEnv {

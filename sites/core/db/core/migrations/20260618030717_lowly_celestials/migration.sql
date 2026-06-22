@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ALTER COLUMN "state" SET DATA TYPE jsonb USING "state"::jsonb;

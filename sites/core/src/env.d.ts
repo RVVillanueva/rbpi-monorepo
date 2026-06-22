@@ -60,6 +60,7 @@ declare interface CloudflareBindings extends CloudflareEnv {
   KV: KVNamespace
   LEGACY: Hyperdrive
   CORE: Hyperdrive
+  MEDIA_BUCKET: R2Bucket
 }
 
 declare type HonoCloudflare = {

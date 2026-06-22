@@ -11,11 +11,17 @@ import { createLegacyDatabase } from '~/db/legacy'
 import { createCoreDatabase } from '~/db/core'
 
 import { getT } from '~/locales'
+import { StatusCodes } from 'http-status-codes';
+
+let legacyDb: Awaited<ReturnType<typeof createLegacyDatabase>> | null = null
+let coreDb: Awaited<ReturnType<typeof createCoreDatabase>> | null = null
 
 // Core middleware to set up database connections and localization in the context
 export const core = createMiddleware<HonoCloudflare>(async (ctx, next) => {
-  ctx.set('legacy', await createLegacyDatabase(ctx.env))
-  ctx.set('core', await createCoreDatabase(ctx.env))
+  if (!legacyDb) legacyDb = await createLegacyDatabase(ctx.env)
+  if (!coreDb) coreDb = await createCoreDatabase(ctx.env)
+
+  ctx.set('db', { legacy: legacyDb, core: coreDb })
   ctx.set('locale', getT())
 
   return next()
@@ -39,18 +45,23 @@ export const loggerMiddleware = createMiddleware<HonoCloudflare>(async (ctx, nex
   console.log(`[${new Date().toJSON()}] ${method} ${pathname} ${status} ${ms}ms - ${ip}`)
 })
 
+let baAuthInstance: ReturnType<typeof createAuthFromDatabase> | null = null
+
 // Middleware to handle authentication using BetterAuth and D1 database
 export const betterAuthMiddleware = createMiddleware<HonoCloudflare>(async (ctx, next) => {
   try {
-    const db = ctx.get('core')
-    const auth = createAuthFromDatabase(db, ctx.env)
-    ctx.set('auth', auth)
+    if (!baAuthInstance) {
+      const db = ctx.get('db')
+      baAuthInstance = createAuthFromDatabase(db.core, ctx.env)
+    }
+
+    ctx.set('auth', baAuthInstance)
 
     // Check if authenticated then add user and session in the context
-    const result = await auth.api.getSession({
-      headers: ctx.req.raw.headers,
+    const result = await baAuthInstance.api.getSession({
+      headers: new Headers(ctx.req.raw.headers),
     })
-
+    
     if (result) {
       const { user, session } = result
       ctx.set('user', user)
@@ -64,3 +75,32 @@ export const betterAuthMiddleware = createMiddleware<HonoCloudflare>(async (ctx,
   return next()
 })
 
+// mediaMiddleware provides an endpoint for users to access uploaded files
+// only those who are authenticated are allowed to query this endpoint.
+export const mediaMiddleware = createMiddleware<HonoCloudflare>(async (ctx, next) => {
+  const session = ctx.get('session')
+
+  if (!session) {
+    return ctx.text('Unauthorized', StatusCodes.UNAUTHORIZED)
+  }
+
+  try {
+    const key = ctx.req.path.replace(/^\/media\//, '')
+    const object = await ctx.env.MEDIA_BUCKET.get(key)
+
+    if (!object) {
+      return ctx.text('Not found', StatusCodes.NOT_FOUND)
+    }
+
+    const buf = await object.arrayBuffer()
+    const headers = new Headers()
+    
+    headers.set('etag', object.httpEtag)
+    headers.set('content-type', object.httpMetadata?.contentType ?? 'application/octet-stream')
+    headers.set('cache-control', 'public, max-age=31536000')
+
+    return new Response(buf, { headers })
+  } catch (error) {
+    console.error(error)
+  }
+})

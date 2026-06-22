@@ -6,6 +6,29 @@ export function createUniqueId() {
   return nanoid(42)
 }
 
+// @AI
+export function createNumericId(length: 9 | 10 | 11 | 12 = 12): number {
+  // 1. Define boundaries using BigInt to prevent math rounding errors
+  const min = BigInt(10 ** (length - 1))
+  const max = BigInt(10 ** length - 1)
+  const range = max - min + 1n
+
+  // 2. Generate 8 bytes of cryptographically secure entropy
+  const buffer = new ArrayBuffer(8)
+  const bytes = new Uint8Array(buffer)
+  crypto.getRandomValues(bytes)
+
+  // 3. Read the bytes cleanly as a 64-bit unsigned integer
+  const view = new DataView(buffer)
+  const rand = view.getBigUint64(0)
+
+  // 4. Calculate the ID within our boundaries
+  const id = (rand % range) + min
+
+  // 5. Convert safely back to a plain number
+  return Number(id)
+}
+
 // fromDrizzle have a very loose types... not relying on Record<string, unknown>
 // will help reduce the issues we have when creating proto buf messages from drizzle
 // made types.

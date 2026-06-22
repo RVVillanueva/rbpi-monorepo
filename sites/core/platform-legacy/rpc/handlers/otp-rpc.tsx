@@ -1,149 +1,36 @@
+// otp-rpc.tsx
+// 
+// Used for authenticating legacy users into the rbpicore platform using their *.rbpi@gmail.com. 
+// It is hardcoded in this source file, so when things get updated, this source file needs to be 
+// rebuild with the platform.
+
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { getEmployeeByUsername } from "~/platform-legacy/functions/internal";
+import { getEmployeeById, getEmployeeByUsername } from "~/platform-legacy/functions/internal";
 
 import { StatusCodes } from "http-status-codes"
 import { isNotFound } from "~/db/errors";
 import { createMailerClient } from "~/platform-legacy/helpers/mailer";
 
 import { render } from 'react-email'
-import { getRandomIntWebCrypto } from "~/platform-legacy/helpers/utils";
-import { getCookie, setCookie } from "hono/cookie";
-import { JSX } from "react";
+import { getBase64FileMeta, getRandomIntWebCrypto } from "~/platform-legacy/helpers/utils";
+import { setSignedCookie } from "hono/cookie";
 import { uneval } from "devalue";
-import { internalUsers, users } from "@schema/users";
+import { users } from "@schema/users";
 import { eq } from "drizzle-orm";
-import { nanoid } from "nanoid";
-import { createUniqueId } from "~/platform-core/helpers/struct";
-
-const generateOtpRoute = createRoute({
-  method: 'post',
-  path: '/otp/generate',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: z
-            .object({
-              username: z
-                .string()
-                .regex(/^[A-Z]{3}.+$/, 'Invalid username')
-                .min(8, 'Invalid username')
-                .min(1),
-            }),
-        },
-      },
-    },
-  },
-
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            id: z.number(),
-            email: z.email(),
-            sent: z.boolean(),
-          }),
-        },
-      },
-      description: 'Respond the state of the OTP and whether it was sent or not.',
-    },
-
-    404: {
-      content: {
-        'application/json': {
-          schema: z.object({}),
-        },
-      },
-      description: 'User not found',
-    },
-
-    503: {
-      content: {
-        'application/json': {
-          schema: z.object({}),
-        },
-      },
-      description: 'Service unavailable',
-    },
-
-    500: {
-      content: {
-        'application/json': {
-          schema: z.object({}),
-        },
-      },
-      description: 'Internal server error',
-    },
-  },
-
-})
-
-const validateOtpRoute = createRoute({
-  method: 'post',
-  path: '/otp/validate',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            id: z.number(),
-            input: z.number().min(100000).max(999999),
-          }),
-        },
-      },
-    },
-  },
-
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: z
-            .object({
-              
-            })
-            .openapi('ValidateOTPResponse#Success'),
-        },
-      },
-      description: 'Validates the OTP sent by the actor',
-    },
-
-    403: {
-      content: {
-        'application/json': {
-          schema: z
-            .object({
-
-            })
-            .openapi('ValidateOTPResponse#Forbidden'),
-        },
-      },
-      description: 'Mismatch',
-    },
-
-    429: {
-      content: {
-        'application/json': {
-          schema: z
-            .object({
-
-            })
-            .openapi('ValidateOTPResponse#TooManyRequest'),
-        },
-      },
-      description: 'Actor attempted too many validations',
-    },
-  },
-})
+import { 
+  addLegacyUserToOrganization, 
+  getRbpiOrganization,
+} from "~/platform-core/functions/internal";
+import { createNumericId, createUniqueId } from "~/platform-core/helpers/struct";
+import { generateOtpRoute, validateOtpRoute } from "./specs/otp";
 
 const otpRpc = new OpenAPIHono<HonoCloudflare>()
 
   // An RPC used for generating an OTP for the user attempting to login RBPICore
   .openapi(generateOtpRoute, async ctx => {
     const req = ctx.req.valid('json')
-    const db = ctx.get('legacy')
-    const employee = await getEmployeeByUsername(db, req.username.trim())
+    const db = ctx.get('db')
+    const employee = await getEmployeeByUsername(db.legacy, req.username.trim())
     const mailer = await createMailerClient(ctx.env)
     const t = ctx.get('locale')
 
@@ -161,7 +48,7 @@ const otpRpc = new OpenAPIHono<HonoCloudflare>()
     const props = { fullName, email, code }
 
     let sent = false
-    let OneTimePassword = (await import('~/emails/en/internal/one-time-password')).default
+    let OneTimePassword = (await import('~/emails/internal/en/one-time-password')).default
 
     const res = await mailer.sendEmail({
       to: email,
@@ -197,13 +84,18 @@ const otpRpc = new OpenAPIHono<HonoCloudflare>()
   .openapi(validateOtpRoute, async ctx => {
     const req = ctx.req.valid('json')
     const auth = ctx.get('auth')
-    const coredb = ctx.get('core')
+    const db = ctx.get('db')
     const actual = await ctx.env.KV.get(`${ req.id }_otpCode`) // req.id is basically the employee id.
 
     // Matched? Create an account for the internal user and login.
     if (actual && req.input === Number(actual)) {
+      const employee = await getEmployeeById(db.legacy, req.id)
       const json = await ctx.env.KV.get(`${ req.id }_data`)
-      const data = eval(`(${json ?? 'null'})`) as RBPICore.Legacy.GenEmployee | null
+      const data = eval(`(${json ?? 'null'})`) as RBPICore.Legacy.GeneralEmployee | null
+
+      if (employee.isErr()) {
+        return ctx.json({}, StatusCodes.FAILED_DEPENDENCY)
+      }
 
       // Return an error when the data has now been purge by KV.
       if (!data) {
@@ -213,12 +105,13 @@ const otpRpc = new OpenAPIHono<HonoCloudflare>()
       const username = data.username
       const email = `${ data.username }.rbpi@gmail.com`.toLowerCase()
 
-      // Check if internal user already exists in the database
-      const [existing] = await coredb.select()
+      // Check if user already exists in the database
+      const [existing] = await db.core.select()
         .from(users)
         .where(eq(users.username, username))
         .limit(1)
       
+      // Bypass Better-Auth login mechanism
       const handleLogin = async (userId: string) => {
         const authCtx = await auth.$context
 
@@ -227,7 +120,7 @@ const otpRpc = new OpenAPIHono<HonoCloudflare>()
         const { name, attributes } = cookieConfig
         const { token } = session
 
-        setCookie(ctx, name, token, attributes)
+        await setSignedCookie(ctx, name, token, authCtx.secret, attributes)
 
         return ctx.json({}, StatusCodes.OK)
       }
@@ -236,25 +129,69 @@ const otpRpc = new OpenAPIHono<HonoCloudflare>()
         return handleLogin(existing.id)
       }
 
-      const { user } = await auth.api.createUser({
-        body: {
-          role: 'user',
-          email,
-          name: data.fullName,
-          data: {
-            username,
-            emailVerified: true,
-          },
+      // Add the created user into the RBPI organization
+      const org = await getRbpiOrganization(db.core)
+
+      if (org.isErr()) {
+        return ctx.json({}, StatusCodes.FAILED_DEPENDENCY)
+      }
+
+      const numericId = createNumericId()
+
+      // @CRITICAL
+      //
+      // Upload the avatar image into r2 media bucket. Take note,
+      // the image from the legacy DB is encoded as a base64 string stored
+      // into the database, we don't actually have an idea what format
+      // the image is using, so I am assuming it's a PNG file.
+      //
+      const encoded = employee.value.avatar.toString('utf8')
+      const { contentType, ext } = getBase64FileMeta(encoded)
+      const buf = Uint8Array.from(atob(encoded), c => c.charCodeAt(0))
+      const bucketPath = `users/${numericId}/avatar.${ext}`
+    
+      await ctx.env.MEDIA_BUCKET.put(bucketPath, buf, {
+        httpMetadata: {
+          contentType,
         },
       })
 
-      // Side effect when a new user is created
-      await coredb
-        .insert(internalUsers)
+      const [user] = await db.core
+        .insert(users)
         .values({
-          uid: createUniqueId(),
-          userId: user.id,
+          id: createUniqueId(),
+          numericId,
+          role: 'user',
+          email: email,
+          emailVerified: true,
+          image: `/media/${bucketPath}`,
+          defaultOrganizationId: org.value.id,
+          username: username,
+          name: data.fullName,
+          isAnonymous: false,
+          banned: false,
+          banExpires: null,
+          banReason: null,
+          state: {
+            interfaceStates: {
+              isCollapsedSidebar: false,
+              isVisiblePanelView: true,
+
+              railsWidth: 42,
+              sidebarWidth: 172,
+              panelWidth: 240,
+
+              windowStates: {
+                activeWindowId: null,
+                windows: [],
+              },
+            },
+          } satisfies RBPICore.UserStateConfig,
         })
+        .returning()
+
+      // Create member record for the user
+      await addLegacyUserToOrganization(db.core, user.id, org.value.id)
 
       return handleLogin(user.id)
     } else if (actual && req.input) {

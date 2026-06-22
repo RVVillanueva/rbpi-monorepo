@@ -15,7 +15,7 @@ const helloRoute = createRoute({
       }),
   },
   responses: {
-    200: {
+    [200]: {
       content: {
         'application/json': {
           schema: z
@@ -24,7 +24,7 @@ const helloRoute = createRoute({
                 .string()
                 .describe('The greeting message'),
             })
-            .openapi('HelloResponse')
+            .openapi('HelloResponse'),
         },
       },
       description: 'Returns a greeting message',

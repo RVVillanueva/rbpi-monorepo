@@ -1,1 +1,11 @@
-@import '@shadcn/base/root.css'
+@import '@shadcn/base/root.css';
+
+#app {
+  @apply bg-zinc-200;
+}
+
+/* Disable backdrop-filter for the command component */
+[role="dialog"] ~ [data-radix-popper-content-wrapper],
+[data-slot="dialog-overlay"] {
+  backdrop-filter: none !important;
+}

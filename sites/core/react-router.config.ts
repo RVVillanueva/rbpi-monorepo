@@ -5,4 +5,7 @@ export default {
   buildDirectory: 'dist',
   ssr: true,
   prerender: [],
+  future: {
+    v8_viteEnvironmentApi: true,
+  },
 } satisfies Config

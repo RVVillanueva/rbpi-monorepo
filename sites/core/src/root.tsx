@@ -1,29 +1,21 @@
-import { Root } from '@/lib/page'
-import { TooltipProvider } from '@shadcn/base/components/ui/tooltip'
-import { PropsWithChildren } from 'react'
-import { Outlet, useLoaderData, useRouteError } from 'react-router'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Root } from '@/lib/page';
+import { TooltipProvider } from '@shadcn/base/components/ui/tooltip';
+import { PropsWithChildren } from 'react';
+import { Outlet, useRouteError } from 'react-router';
 
-const queryClient = new QueryClient()
-
-import { Route } from './+types/root'
+import { Route } from './+types/root';
 import { RBPICoreProvider } from './context/RBPICoreProvider';
 
 export const loader = (args: Route.LoaderArgs) => {
-  const { hono } = args.context
-  return { rpc: hono.env.RPC_URL }
+  return {}
 }
 
 const Wrapper = (props: PropsWithChildren) => {
-  const { rpc } = useLoaderData<typeof loader>()
-
   return (
     <RBPICoreProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Root>{ props.children }</Root>
-        </TooltipProvider>
-      </QueryClientProvider>
+      <Root>
+        { props.children }
+      </Root>
     </RBPICoreProvider>
   )
 }
@@ -37,16 +29,13 @@ export default function App() {
   )
 }
 
-export function ErrorBoundary() {
-  const err = useRouteError()
-  
+export function ErrorBoundary(props: Route.ErrorBoundaryProps) {
+
   return (
-    <TooltipProvider>
+    <RBPICoreProvider>
       <Root>
-        <main>
-          { JSON.stringify(err) }
-        </main>
+        <main></main>
       </Root>
-    </TooltipProvider>  
+    </RBPICoreProvider>  
   )
 }

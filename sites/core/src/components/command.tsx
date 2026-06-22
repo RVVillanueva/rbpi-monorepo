@@ -9,20 +9,45 @@ import {
   CommandShortcut,
 } from "@shadcn/base/components/ui/command";
 
-import { PropsWithChildren } from 'react';
+import React, { createContext, useContext, useState, type PropsWithChildren } from "react";
 
-type RPBICommandCenterProviderProps = PropsWithChildren<{
-  
-}>
+type RPBICommandCenterProviderProps = PropsWithChildren<{}>
+
+type CommandCenterContextType = {
+  openCommandCenter: () => void
+  closeCommandCenter: () => void
+}
+
+const CommandCenterContext = createContext<CommandCenterContextType | null>(null)
 
 export const RBPICommandCenterProvider = (props: RPBICommandCenterProviderProps) => {
   const { children } = props
 
-  return (
-    <>
-      
+  const [isOpen, setOpen] = useState<boolean>(false)
 
+  const openCommandCenter = () => setOpen(true)
+  const closeCommandCenter = () =>  setOpen(false)
+
+  return (
+    <CommandCenterContext.Provider value={{ openCommandCenter, closeCommandCenter }}>
       { children }
-    </>
+
+      <CommandDialog 
+        onOpenChange={setOpen}
+        open={isOpen}>
+        <Command>
+          <CommandInput></CommandInput>
+          <CommandList>
+            
+          </CommandList>
+        </Command>
+      </CommandDialog>
+    </CommandCenterContext.Provider>
   )
-} 
+}
+
+export const useRBPICommandCenterContext = () => {
+  const ctx = useContext(CommandCenterContext)
+  if (!ctx) throw new Error("useCommandCenter must be called inside of CommandCenterProvider")
+  return ctx
+}

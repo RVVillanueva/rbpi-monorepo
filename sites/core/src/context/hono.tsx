@@ -1,5 +1,8 @@
-import { createContext, PropsWithChildren, useContext } from 'react'
+import { createContext, PropsWithChildren, useContext, useMemo } from 'react'
 import { getT } from '~/locales'
+
+import { createCoreRpcClient } from '~/platform-core/rpc/client'
+import { createLegacyRpcClient } from '~/platform-legacy/rpc/client'
 
 export interface HonoAppContext {
   lang: string
@@ -18,9 +21,12 @@ export function HonoAppContextProvider(props: PropsWithChildren<{ initState: Hon
 }
 
 export function useT() {
-  return getT(useHonoContext().lang ?? 'en')
+  const { lang } = useHonoContext()
+  return useMemo(() => getT(lang ?? 'en'), [lang])
 }
 
 export function useHonoContext() {
-  return useContext(honoContext)
+  const ctx = useContext(honoContext)
+  if (!ctx) throw new Error('useHonoContext must be used inside of HonoContext')
+    return ctx
 }

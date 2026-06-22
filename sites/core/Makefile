@@ -21,23 +21,18 @@ mysql2-legacy.patch:
 			-e "s/CREATE ALGORITHM/CREATE OR REPLACE ALGORITHM/g" \
 			-e "s/^CREATE VIEW/CREATE OR REPLACE VIEW/g"
 
+mysql2-legacy.migration-dump:
+	mysqldump -h 127.0.0.1 -P3306 -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} __drizzle_migrations > ./db/legacy/migrations/migrations_snapshot.sql
+
+mysql2-legacy.restore:
+	mysqldump -h 127.0.0.1 -P3306 -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} < ${DB_BACKUP}
+
 mysql2-legacy.migrate:
 	bunx drizzle-kit migrate --config ./db/legacy/drizzle.config.ts
-
-mysql2-legacy.push:
-	bunx drizzle-kit push --config ./db/legacy/drizzle.config.ts
-
-mysql2-legacy.up:
-	bunx drizzle-kit up --config ./db/legacy/drizzle.config.ts
-
-mysql2-legacy.drop:
-	bunx drizzle-kit drop --config ./db/legacy/drizzle.config.ts
+	$(MAKE) mysql2-legacy.migration-dump
 
 mysql2-legacy.check:
 	bunx drizzle-kit check --config ./db/legacy/drizzle.config.ts
-
-mysql2-legacy.pull:
-	bunx drizzle-kit pull --config ./db/legacy/drizzle.config.ts
 
 mysql2-legacy.studio:
 	bunx drizzle-kit studio --config ./db/legacy/drizzle.config.ts

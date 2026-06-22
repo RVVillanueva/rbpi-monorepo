@@ -1,5 +1,8 @@
 {
   "editor.tabSize": 2,
   "js/ts.experimental.useTsgo": true,
-  "mermaidChart.showGenerateDiagramCodeLens": false
+  "mermaidChart.showGenerateDiagramCodeLens": false,
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
 }

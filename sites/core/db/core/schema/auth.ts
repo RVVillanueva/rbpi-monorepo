@@ -1,5 +1,6 @@
 import {
     integer,
+    json,
     jsonb,
     pgTable,
     serial,
@@ -7,6 +8,7 @@ import {
     timestamp
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
+import { organizations, teams } from './organizations';
 
 export const sessions = pgTable('sessions', {
   id: text('id').notNull().primaryKey(),
@@ -17,9 +19,11 @@ export const sessions = pgTable('sessions', {
   expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
-  activeSpaceId: integer('active_space_id'),
+  activeOrganizationId: text('active_organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  activeTeamId: text('active_team_id').references(() => teams.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  state: jsonb('state').$type<RBPICore.Session.StateConfig>(),
 })
 
 export const accounts = pgTable('accounts', {

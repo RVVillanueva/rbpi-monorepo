@@ -1,3 +1,13 @@
 packages:
   - 'sites/*'
   - 'packages/*'
+
+allowBuilds:
+  '@bufbuild/buf': true
+  esbuild: true
+  msw: true
+  sharp: true
+  workerd: true
+
+overrides:
+  zod: "4.3.6"

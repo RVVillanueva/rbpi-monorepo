@@ -22,11 +22,9 @@ id = ""
 binding = "CORE"
 id = ""
 
-[[d1_databases]]
-binding = "DB"
-database_name = "core-d1"
-database_id = "288fe3ac-a92c-4744-9a46-16cfd5127b23"
-migrations_dir = "./db/main/migrations"
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "core-media-files"
 
 [dev]
 port = 5000
@@ -42,6 +40,10 @@ WORKER_ENV = 'development'
 binding = "KV"
 id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
+[[env.development.r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "core-media-files-dev"
+
 [[env.development.hyperdrive]]
 binding = "LEGACY"
 id = ""
@@ -49,12 +51,6 @@ id = ""
 [[env.development.hyperdrive]]
 binding = "CORE"
 id = ""
-
-[[env.development.d1_databases]]
-binding = "DB"
-database_name = "core-d1"
-database_id = "288fe3ac-a92c-4744-9a46-16cfd5127b23"
-migrations_dir = "./db/main/migrations"
 
 [env.staging]
 [env.staging.vars]
@@ -64,11 +60,9 @@ WORKER_ENV = 'staging'
 binding = "KV"
 id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "core-d1"
-database_id = "288fe3ac-a92c-4744-9a46-16cfd5127b23"
-migrations_dir = "./db/main/migrations"
+[[env.staging.r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "core-media-files-staging"
 
 [[env.staging.hyperdrive]]
 binding = "LEGACY"
@@ -86,11 +80,9 @@ WORKER_ENV = 'test'
 binding = "KV"
 id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-[[env.test.d1_databases]]
-binding = "DB"
-database_name = "core-d1"
-database_id = "288fe3ac-a92c-4744-9a46-16cfd5127b23"
-migrations_dir = "./db/main/migrations"
+[[env.test.r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "core-media-files-test"
 
 [[env.test.hyperdrive]]
 binding = "LEGACY"

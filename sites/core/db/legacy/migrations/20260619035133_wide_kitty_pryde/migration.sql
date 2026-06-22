@@ -1,0 +1,1 @@
+CREATE OR REPLACE ALGORITHM = undefined SQL SECURITY definer VIEW `cost_centers_view` AS (select `id` as `id`, `name` as `name`, `level` as `level`, `parent` as `parent`, `childcount` as `child_count`, `category_id` as `category_id` from `acctng_cost_center`);

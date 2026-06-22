@@ -1,5 +1,5 @@
 export * from './clients'
-export * from './business'
+export * from './accounting'
 export * from './hr'
 export * from './logs'
 export * from './messages'

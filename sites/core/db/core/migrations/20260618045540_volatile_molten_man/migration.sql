@@ -1,0 +1,2 @@
+ALTER TABLE "organization_profiles" ADD COLUMN "numeric_id" bigint NOT NULL;--> statement-breakpoint
+ALTER TABLE "organization_profiles" ADD CONSTRAINT "organization_profiles_numeric_id_key" UNIQUE("numeric_id");

@@ -61,5 +61,11 @@ export default defineConfig(args => {
     },
 
     define,
+
+    server: {
+      allowedHosts: [
+        'automatically-priorities-compliance-perfume.trycloudflare.com'
+      ],
+    },
   }
 })

@@ -3,7 +3,7 @@ import { contextStorage } from 'hono/context-storage';
 import { createHonoServer } from 'react-router-hono-server/cloudflare';
 
 import { betterAuthHandler } from './auth';
-import { betterAuthMiddleware, core, loggerMiddleware } from './middleware';
+import { betterAuthMiddleware, core, loggerMiddleware, mediaMiddleware } from './middleware';
 
 import { coreRpc } from '~/platform-core/rpc';
 import { legacyRpc } from '~/platform-legacy/rpc';
@@ -43,11 +43,11 @@ export const withSentry = (mux: ReturnType<typeof main>) => {
   )
 }
 
-// main
 export const main = (hono: ReturnType<typeof createHono> = createHono()) => {
   return hono
     .use(contextStorage())
     .use(betterAuthMiddleware)
+    .get('/media/*', mediaMiddleware)
     .all('/ba/*', ...betterAuthHandler)
     .route('/', legacyRpc)
     .route('/', coreRpc)
@@ -56,7 +56,7 @@ export const main = (hono: ReturnType<typeof createHono> = createHono()) => {
 
 export const createServer = (hono: ReturnType<typeof main> = createHono()) => withSentry(main(hono))
 
-// cloudflare entrypoint
+// main entrypoint
 export default createServer(
   createHono()
     .get('/.well-known/*', ctx => ctx.body(null, 204))

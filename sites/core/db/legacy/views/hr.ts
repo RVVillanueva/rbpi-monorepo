@@ -13,6 +13,8 @@ export const employeesView = mysqlView('employees_view')
         id: generalEmployees.id,
         generatedId: generalEmployees.generatedid,
         username: generalEmployees.username,
+
+        avatar: generalEmployees.image.as('avatar'),
         
         fullName: sql<string>`
           CONCAT(

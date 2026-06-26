@@ -2,8 +2,8 @@ import { eq, sql } from "drizzle-orm";
 import { mysqlView } from "drizzle-orm/mysql-core";
 import { generalBranches, generalEmployees, hrAttendance, hrPositions, hrRanks } from "~/db/legacy/migrations/schema";
 
-export type GeneralEmployee = typeof employeesView.$inferSelect
-export type HrAttendance = typeof attendancesView.$inferSelect
+export type HREmployeesView = typeof employeesView.$inferSelect
+export type HRAttendancesView = typeof attendancesView.$inferSelect
 
 // @SQLVIEW: Employees
 export const employeesView = mysqlView('employees_view')

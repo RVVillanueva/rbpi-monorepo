@@ -1,22 +1,26 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { pagingQuerySchema } from "~/openapi/schemas/pagination";
-import { GetAllJournalEntriesResponseSchema, GetCostCentersResponseSchema, GetGlAccountsResponseSchema, GetTrialBalanceResponseSchema } from "~/platform-legacy/schemas/accounting-rpc";
+import { createPaginatedResponseSchema, pagingQuerySchema } from "~/openapi/schemas/pagination";
+import { 
+  type ComputeFinancialSummaryResult, 
+  type ComputedFullTrialBalanceResult,
+} from "~/platform-legacy/functions/internal";
 
 export const getRBPIGlAccountsRoute = createRoute({
   method: 'get',
   path: '/rbpi/ledger/accounts',
   request: {
-    query: pagingQuerySchema,
+    query: pagingQuerySchema.extend({
+      
+    }),
   },
   responses: {
     [200]: {
       content: {
         'application/json': {
-          schema: z
-            .object({
-              
-            })
-            .openapi('GetGLAccountsResponse#Success'),
+          schema: createPaginatedResponseSchema(
+            z.custom<RBPICore.Legacy.AccountingGlAccountsView>(),
+            "GetGlAccountsResponseSchema",
+          ),
         },
       },
       description: '',
@@ -36,18 +40,14 @@ export const getRBPIGlAccountsRoute = createRoute({
 export const getRBPIGlAccountByCodeRoute = createRoute({
   method: 'get',
   path: '/rbpi/ledger/accounts/{glCode}',
-  request: {
-    query: pagingQuerySchema,
-  },
+  request: {},
   responses: {
     [200]: {
       content: {
         'application/json': {
-          schema: z
-            .object({
-              
-            })
-            .openapi('GetGLAccountByCode#Success'),
+          schema: z.object({
+            
+          }),
         },
       },
       description: '',
@@ -56,7 +56,9 @@ export const getRBPIGlAccountByCodeRoute = createRoute({
     [400]: {
       content: {
         'application/json': {
-          schema: z.object({}),
+          schema: z.object({
+            account: z.custom<RBPICore.Legacy.AccountingGlAccountsView>()
+          }),
         },
       },
       description: '',
@@ -68,17 +70,18 @@ export const getRBPIBranchesRoute = createRoute({
   method: 'get',
   path: '/rbpi/branches',
   request: {
-    query: pagingQuerySchema,
+    query: pagingQuerySchema.extend({
+
+    }),
   },
   responses: {
     [200]: {
       content: {
         'application/json': {
-          schema: z
-            .object({
-              
-            })
-            .openapi('GetBranches#Success'),
+          schema: createPaginatedResponseSchema(
+            z.custom<RBPICore.Legacy.AccountingBranchesView>(),
+            "GetBranchesResponseSchema",
+          ),
         },
       },
       description: '',
@@ -99,17 +102,18 @@ export const getRBPIBudgetsRoute = createRoute({
   method: 'get',
   path: '/rbpi/budgets',
   request: {
-    query: pagingQuerySchema,
+    query: pagingQuerySchema.extend({
+
+    }),
   },
   responses: {
     [200]: {
       content: {
         'application/json': {
-          schema: z
-            .object({
-              
-            })
-            .openapi('GetBudgets#Success'),
+          schema: createPaginatedResponseSchema(
+            z.custom<RBPICore.Legacy.AccountingBudgetsView>(),
+            "GetBudgetsResponseSchema",
+          ),
         },
       },
       description: '',
@@ -159,13 +163,18 @@ export const getRBPICostCentersRoute = createRoute({
   method: 'get',
   path: '/rbpi/costCenters',
   request: {
-    query: pagingQuerySchema,
+    query: pagingQuerySchema.extend({
+
+    }),
   },
   responses: {
     [200]: {
       content: {
         'application/json': {
-          schema: GetCostCentersResponseSchema,
+          schema: createPaginatedResponseSchema(
+            z.custom<RBPICore.Legacy.AccountingCostCentersView>(),
+            "GetCostCentersResponseSchema",
+          ),
         },
       },
       description: '',
@@ -182,17 +191,30 @@ export const getRBPICostCentersRoute = createRoute({
   },
 })
 
-export const getRBPIAllJournalEntriesRoute = createRoute({
+export const getRBPIAllJournalHeaderEntriesRoute = createRoute({
   method: 'get',
   path: '/rbpi/ledger/journals',
   request: {
-    query: pagingQuerySchema,
-  },
+    query: pagingQuerySchema.extend({
+      periods: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(arr => arr.map((d) => new Date(d))),
+      branchIds: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(ids => ids.map(d => Number(d)))
+        .optional(),
+    }),
+  },  
   responses: {
     [200]: {
       content: {
         'application/json': {
-          schema: GetAllJournalEntriesResponseSchema,
+          schema: createPaginatedResponseSchema(
+            z.custom<RBPICore.Legacy.AccountingJournalAuditView>(),
+            "GetRBPIAllJournalHeaderEntries",
+          ),
         },
       },
       description: '',
@@ -200,10 +222,96 @@ export const getRBPIAllJournalEntriesRoute = createRoute({
     [400]: {
       content: {
         'application/json': {
-          schema: z.object({}),
+          schema: z.object({
+
+          }),
         },
       },
       description: 'Unimplemented',
+    },
+  },
+})
+
+export type GetRBPIJournalsResult = z.infer<typeof getRBPIJournalsRoute.responses['200']['content']['application/json']['schema']>
+export const getRBPIJournalsRouteResponseSchema = createPaginatedResponseSchema(
+  z.custom<RBPICore.Legacy.AccountingJournalHeaderView>(),
+  'GetRBPIJournals',
+)
+
+export const getRBPIJournalsRoute = createRoute({
+  method: 'get',
+  path: '/rbpi/ledger/journals',
+  request: {
+    query: pagingQuerySchema.extend({
+      periods: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(arr => arr.map((d) => new Date(d))),
+      branchIds: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(ids => ids.map(d => Number(d)))
+        .optional(),
+    }),
+  },
+  responses: {
+    [200]: {
+      content: {
+        'application/json': {
+          schema: getRBPIJournalsRouteResponseSchema,
+        },
+      },
+      description: '',
+    },
+
+    [400]: {
+      content: {
+        'application/json': {
+          schema: z.object({}),
+        },
+      },
+      description: '',
+    },
+  },
+})
+
+export type GetRBPIJournalAuthorsResult = z.infer<typeof getRBPIJournalAuthorsRoute['responses']['200']['content']['application/json']['schema']>
+
+export const getRBPIJournalAuthorsRoute = createRoute({
+  method: 'get',
+  path: '/rbpi/ledger/journals/{journalId}/authors',
+  request: {
+    param: z.object({
+      journalId: z.coerce.number(),
+    }),
+    query: pagingQuerySchema.extend({}),
+  },
+  responses: {
+    [200]: {
+      content: {
+        'application/json': {
+          schema: createPaginatedResponseSchema(
+            z.custom<{
+              makerId: number | null,
+              makerFullName: string,
+              makerAvatar: Buffer<ArrayBufferLike> | null,
+              makerBranchName: string | null,
+              makerPositionName: string | null,
+            }>(),
+            'GetRBPIJournalAuthors',
+          ),
+        },
+      },
+      description: '',
+    },
+
+    [400]: {
+      content: {
+        'application/json': {
+          schema: z.object({}),
+        },
+      },
+      description: '',
     },
   },
 })
@@ -212,17 +320,27 @@ export const getRBPIGlAccountJournalEntriesRoute = createRoute({
   method: 'get',
   path: '/rbpi/ledger/accounts/{glCode}/journals',
   request: {
-    query: pagingQuerySchema,
+    query: pagingQuerySchema.extend({
+      journalId: z.coerce.number(),
+      periods: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(arr => arr.map((d) => new Date(d))),
+      branchIds: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(ids => ids.map(d => Number(d)))
+        .optional(),
+    }),
   },
   responses: {
     [200]: {
       content: {
         'application/json': {
-          schema: z
-            .object({
-              
-            })
-            .openapi('GetGlAccountJournalEntries#Success'),
+          schema: createPaginatedResponseSchema(
+            z.custom<RBPICore.Legacy.AccountingJournalAuditView>(),
+            "GetRBPIGlAccountJournalEntriesRoute",
+          ),
         },
       },
       description: '',
@@ -247,11 +365,7 @@ export const getRBPIJournalEntryByIdRoute = createRoute({
     [200]: {
       content: {
         'application/json': {
-          schema: z
-            .object({
-              
-            })
-            .openapi('GetJournalEntryById#Success'),
+          schema: z.custom<RBPICore.Legacy.AccountingJournalAuditView>().openapi("GetRBPIJournalEntryByIdRoute"),
         },
       },
       description: '',
@@ -273,16 +387,24 @@ export const getRBPITrialBalanceRoute = createRoute({
   path: '/rbpi/ledger/trialBalance',
   request: {
     query: z.object({
-      periodStart: z.coerce.date(),
-      periodEnd: z.coerce.date(),
-      branchId: z.coerce.number().optional(),
+      periods: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(arr => arr.map((d) => new Date(d))),
+      branchIds: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(ids => ids.map(d => Number(d)))
+        .optional(),
     }),
   },
   responses: {
     [200]: {
       content: {
         'application/json': {
-          schema: GetTrialBalanceResponseSchema,
+          schema: z
+            .custom<ComputedFullTrialBalanceResult>()
+            .openapi("GetTrialBalanceResponseSchema"),
         },
       },
       description: '',
@@ -391,24 +513,23 @@ export const getRBPIFinancialSummary = createRoute({
   path: '/rbpi/ledger/reports/financialSummary',
   request: {
     query: z.object({
-      periodStart: z.coerce.date(),
-      periodEnd: z.coerce.date(),
-      branchId: z.number().optional(),
+      accountingStartDate: z.coerce.date().optional(),
+      periods: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(arr => arr.map((d) => new Date(d))),
+      branchIds: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(ids => ids.map(d => Number(d)))
+        .optional(),
     }),
   },
   responses: {
     [200]: {
       content: {
         'application/json': {
-          schema: z.object({
-            totalAssets: z.coerce.number(),
-            totalLiabilities: z.coerce.number(),
-            totalEquity: z.coerce.number(),
-            totalIncome: z.coerce.number(),
-            totalExpenses: z.coerce.number(),
-            netIncome: z.coerce.number(),
-            balanceCheck: z.coerce.number(),
-          })
+          schema: z.custom<ComputeFinancialSummaryResult>()
             .openapi('ComputeFinancialSnapshot#Success')
         },
       },

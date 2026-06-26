@@ -1,0 +1,1 @@
+ALTER TABLE "organization_settings" ALTER COLUMN "fiscal_year_start_day" SET DATA TYPE smallint USING "fiscal_year_start_day"::smallint;

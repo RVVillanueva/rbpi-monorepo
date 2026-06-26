@@ -71,20 +71,23 @@ import { useRBPIAuthContext } from "@/context/RBPIAuthProvider";
 import { useAppStrings } from "~/values/strings/app";
 import { Separator } from "@shadcn/base/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@shadcn/base/components/ui/avatar";
+import { RBPIBreadcrumbProvider } from "./breadcrumb";
 
 type RBPIShellProviderProps = PropsWithChildren<{
-
+  
 }>
 
 export const RBPIShellProvider = (props: RBPIShellProviderProps) => {
   const { children } = props
 
   return (
-    <RBPIWindowProvider>
-      <RBPICommandCenterProvider>
-        { children }
-      </RBPICommandCenterProvider>
-    </RBPIWindowProvider>
+    <RBPIBreadcrumbProvider>
+      <RBPIWindowProvider>
+        <RBPICommandCenterProvider>
+          { children }
+        </RBPICommandCenterProvider>
+      </RBPIWindowProvider>
+    </RBPIBreadcrumbProvider>
   )
 }
 
@@ -344,11 +347,11 @@ export function RBPISidebar(props: RBPISidebarProps) {
     }
 
     return (
-      <div onMouseLeave={onSidebarUnfocus}>
+      <div onMouseOut={onSidebarUnfocus}>
         <div className='p-2 grid gap-2'>
           <div className='flex items-center justify-between'>
             <span className='font-medium text-sm px-2 text-zinc-500'>
-              {sidebar.label}
+              { sidebar.label }
             </span>
             <Button
               size={'icon-sm'}
@@ -357,7 +360,7 @@ export function RBPISidebar(props: RBPISidebarProps) {
             </Button>
           </div>
 
-          <ul className=''>
+          <ul>
             { sidebar.sidebarContent.mainContent.map((item, i) => {
               const Icon = icons[item.icon as ValidIconsType]
 
@@ -368,7 +371,7 @@ export function RBPISidebar(props: RBPISidebarProps) {
                     variant={'ghost'}
                     asChild>
                     <Link to={item.href}>
-                      <Icon strokeWidth={1} size={18} />
+                      <Icon strokeWidth={1} size={8} />
                       <span className='font-normal'>{ item.label }</span>
                     </Link>
                   </Button>
@@ -437,7 +440,8 @@ export function RBPISidebar(props: RBPISidebarProps) {
                     asChild>
                     <Link 
                       className='cursor-pointer'
-                      onMouseOver={() => setFocusRail(nav)}
+                      onBlur={() => setFocusRail(null)}
+                      onFocus={() => setFocusRail(nav)}
                       to={nav.href}>
                       <Icon strokeWidth={0.8} />
                     </Link>

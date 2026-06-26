@@ -1,6 +1,13 @@
 import { useLegacyRpcClient } from "@/context/RBPIClientRPCProvider";
+import { BreadcrumbHandle } from "@components/breadcrumb";
 import { useQuery } from "@tanstack/react-query";
 import { StatusCodes } from "http-status-codes";
+
+export const handle: BreadcrumbHandle = {
+  breadcrumb: {
+    label: 'Budgets',
+  },
+}
 
 export default function AccountingBudgets() {
   const rpc = useLegacyRpcClient()
@@ -19,8 +26,7 @@ export default function AccountingBudgets() {
 
   return (
     <div>
-      Budgets...
-      { JSON.stringify(data) }
+      
     </div>
   )
 }

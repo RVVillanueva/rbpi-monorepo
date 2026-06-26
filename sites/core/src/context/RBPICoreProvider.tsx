@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PropsWithChildren } from "react";
 import { RBPIClientRPCProvider } from "./RBPIClientRPCProvider";
 
-type RBPICoreProviderProps = PropsWithChildren<{}>
+type RBPICoreProviderProps = PropsWithChildren<{
+
+}>
 
 const queryClient = new QueryClient()
 

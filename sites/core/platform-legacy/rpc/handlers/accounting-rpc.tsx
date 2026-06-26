@@ -5,14 +5,20 @@ import {
   getRBPIGlAccountByCodeRoute, getRBPIGlAccountJournalEntriesRoute, 
   getRBPIGlAccountsRoute, getRBPIIncomeStatementRoute, getRBPIJournalAuditRoute, 
   getRBPIJournalEntryByIdRoute, getRBPITrialBalanceRoute,
-  getRBPIAllJournalEntriesRoute, getRBPIFinancialSummary,
+  getRBPIAllJournalHeaderEntriesRoute, getRBPIFinancialSummary,
+  getRBPIJournalsRoute,
+  getRBPIJournalAuthorsRoute,
 } from "./specs/accounting";
 
 import { StatusCodes } from "http-status-codes";
 import { isCursorParams } from "~/openapi/schemas/pagination";
-import { branchesView, budgetsView, costCentersView, glAccountsView, journalAuditView } from "~/db/legacy/schema";
-import { asc, count, desc } from "drizzle-orm";
-import { computeFinancialSummary, computeTrialBalance } from "~/platform-legacy/functions/internal";
+import { acctngJournalTrail, branchesView, budgetsView, costCentersView, employeesView, generalEmployees, glAccountsView, journalAuditView, journalHeaderView } from "~/db/legacy/schema";
+import { asc, count, desc, eq, between, and, sql } from "drizzle-orm";
+import { 
+  computeFinancialSummaryFigures, 
+  computeFullTrialBalanceFigures,
+} from "~/platform-legacy/functions/internal";
+import { addDays, subDays } from "date-fns";
 
 const accountingRpc = new OpenAPIHono<HonoCloudflare>()
 
@@ -32,10 +38,9 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         await tx
           .select()
           .from(glAccountsView)
-          .offset(req.page)
+          .offset((req.page-1) * req.pageSize)
           .limit(req.pageSize)
-          .orderBy(asc(glAccountsView.level))
-          .$dynamic(),
+          .orderBy(asc(glAccountsView.level)),
 
         await tx
           .select({ value: count() })
@@ -54,18 +59,27 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         total: glAccounts.length,
         page: req.page,
         pageSize: req.pageSize,
+        nextPage: req.page+1,
+        prevPage: req.page-1 <= 0 ? req.page : req.page-1,
       },
     }, StatusCodes.OK)
   })
 
   .openapi(getRBPIGlAccountByCodeRoute, async ctx => {
+    const code = ctx.req.param('glCode')
+    const db = ctx.get('db')
 
-    return ctx.json({}, StatusCodes.OK)
+    const [account] = await db.legacy
+      .selectDistinct()
+      .from(glAccountsView)
+      .where(eq(glAccountsView.code, Number(code)))
+    
+    return ctx.json({ account }, StatusCodes.OK)
   })
 
   .openapi(getRBPIJournalEntryByIdRoute, async ctx => {
 
-    return ctx.json({}, StatusCodes.OK)
+    return ctx.json({}, StatusCodes.BAD_REQUEST)
   })
 
   .openapi(getRBPIBranchesRoute, async ctx => {
@@ -84,9 +98,9 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         await tx
           .select()
           .from(branchesView)
-          .offset(req.page)
+          .offset((req.page-1) * req.pageSize)
           .limit(req.pageSize)
-          .$dynamic(),
+          .where(eq(branchesView.branchLevel, 2)),
 
         await tx
           .select({ value: count() })
@@ -105,6 +119,8 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         total: branches.length,
         page: req.page,
         pageSize: req.pageSize,
+        nextPage: req.page+1,
+        prevPage: req.page-1 <= 0 ? req.page : req.page-1,
       },
     }, StatusCodes.OK)
   })
@@ -125,7 +141,7 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         await tx
           .select()
           .from(budgetsView)
-          .offset(req.page)
+          .offset((req.page-1) * req.pageSize)
           .limit(req.pageSize)
           .orderBy(desc(budgetsView.budgetYear))
           .$dynamic(),
@@ -144,6 +160,8 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         total: budgets.length,
         page: req.page,
         pageSize: req.pageSize,
+        nextPage: req.page+1,
+        prevPage: req.page-1 <= 0 ? req.page : req.page-1,
       },
     }, StatusCodes.OK)
   })
@@ -169,7 +187,7 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         await tx
           .select()
           .from(costCentersView)
-          .offset(req.page)
+          .offset((req.page-1) * req.pageSize)
           .limit(req.pageSize)
           .$dynamic(),
         
@@ -186,11 +204,108 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         total: costCenters.length,
         page: req.page,
         pageSize: req.pageSize,
+        nextPage: req.page+1,
+        prevPage: req.page-1 <= 0 ? req.page : req.page-1,
       },
     }, StatusCodes.OK)
   })
 
-  .openapi(getRBPIAllJournalEntriesRoute, async ctx => {
+  .openapi(getRBPIJournalsRoute, async ctx => {
+    const req = ctx.req.valid('query')
+    const db = ctx.get('db')
+
+    if (isCursorParams(req)) {
+      return ctx.json({}, StatusCodes.BAD_REQUEST)
+    }
+
+    const conditions = [
+      ...req.periods.map(
+        period => {
+          const priorDay = subDays(period, 1)
+          return between(journalHeaderView.postingTime, priorDay, addDays(period, 1))
+        }
+      )
+    ]
+
+    const { journals } = await db.legacy.transaction(async tx => {
+      const [ journals ] = await Promise.all([
+        await tx
+          .select()
+          .from(journalHeaderView)
+          .offset((req.page-1) * req.pageSize)
+          .limit(req.pageSize)
+          .orderBy(
+            desc(journalHeaderView.journalId),
+            desc(journalHeaderView.journalDate),
+            desc(journalHeaderView.postingTime),
+          )
+          .where(
+            and(...conditions),
+          )
+          .groupBy(
+            journalHeaderView.journalId,
+          )
+      ])
+
+      return { journals }
+    })
+
+    return ctx.json({
+      data: journals,
+      paging: {
+        total: journals.length,
+        page: req.page,
+        pageSize: req.pageSize,
+        nextPage: req.page+1,
+        prevPage: req.page-1 <= 0 ? req.page : req.page-1,
+      },
+    }, StatusCodes.OK)
+  })
+
+  .openapi(getRBPIJournalAuthorsRoute, async ctx => {
+    const req = ctx.req.valid('query')
+    const journalId = Number(ctx.req.param('journalId'))
+
+    const db = ctx.get('db')
+
+    if (isCursorParams(req) || isNaN(journalId)) {
+      return ctx.json({}, StatusCodes.BAD_REQUEST)
+    }
+
+    const { authors } = await db.legacy.transaction(async tx => {
+      const authors = await tx
+        .selectDistinct({
+          makerId: acctngJournalTrail.makerid,
+          makerFullName: employeesView.fullName,
+          makerAvatar: employeesView.avatar,
+          makerBranchName: employeesView.branchName,
+          makerPositionName: employeesView.positionName,
+        })
+        .from(acctngJournalTrail)
+        .leftJoin(
+          employeesView,
+          eq(employeesView.id, acctngJournalTrail.makerid)
+        )
+        .where(
+          eq(acctngJournalTrail.journalid, journalId)
+        )
+
+      return { authors }
+    })
+
+    return ctx.json({
+      data: authors!,
+      paging: {
+        total: authors.length,
+        page: req.page,
+        pageSize: req.pageSize,
+        nextPage: req.page+1,
+        prevPage: req.page-1 <= 0 ? req.page : req.page-1,
+      },
+    }, StatusCodes.OK)
+  })
+
+  .openapi(getRBPIAllJournalHeaderEntriesRoute, async ctx => {
     const req = ctx.req.valid('query')
     const db = ctx.get('db')
 
@@ -199,7 +314,6 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
     }
 
     const out = await db.legacy.transaction(async tx => {
-      console.log(req)
 
       const [
         journalEntries,
@@ -207,9 +321,10 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         await tx
           .select()
           .from(journalAuditView)
-          .offset(req.page)
+          .offset((req.page-1) * req.pageSize)
           .limit(req.pageSize)
-          .orderBy(desc(journalAuditView.journalDate)),
+          .orderBy(desc(journalAuditView.postingTime))
+          .groupBy(journalAuditView.journalId),
       ])
 
       return { journalEntries }
@@ -223,13 +338,15 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         total: 0,
         page: req.page,
         pageSize: req.pageSize,
+        nextPage: req.page+1,
+        prevPage: req.page-1 <= 0 ? req.page : req.page-1,
       },
     }, StatusCodes.OK)
   })
 
   .openapi(getRBPIGlAccountJournalEntriesRoute, async ctx => {
-
-    return ctx.json({}, StatusCodes.OK)
+    
+    return ctx.json({}, StatusCodes.BAD_REQUEST)
   })
 
   .openapi(getRBPIJournalAuditRoute, async ctx => {
@@ -249,38 +366,14 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
 
   .openapi(getRBPITrialBalanceRoute, async ctx => {
     const req = ctx.req.valid('query')
-    const db = ctx.get('db')
-
-    const res = await computeTrialBalance(
-      db.legacy,
-      req.periodStart, 
-      req.periodEnd,
-      req.branchId,
-    )
-
+    const res = await computeFullTrialBalanceFigures(ctx, req)
     return ctx.json(res, StatusCodes.OK)
   })
 
   .openapi(getRBPIFinancialSummary, async ctx => {
     const req = ctx.req.valid('query')
-    const db = ctx.get('db')
-
-    const res = await computeFinancialSummary(
-      db.legacy, 
-      req.periodStart, 
-      req.periodEnd,
-      req.branchId,
-    )
-
-    return ctx.json({
-      totalAssets: Number(res.totalAssets),
-      totalLiabilities: Number(res.totalLiabilities),
-      totalEquity: Number(res.totalEquity),
-      totalIncome: Number(res.totalIncome),
-      totalExpenses: Number(res.totalExpenses),
-      netIncome: Number(res.netIncome),
-      balanceCheck: Number(res.balanceCheck),
-    }, StatusCodes.OK)
+    const res = await computeFinancialSummaryFigures(ctx, req)
+    return ctx.json(res, StatusCodes.OK)
   })
 
 export { accountingRpc }

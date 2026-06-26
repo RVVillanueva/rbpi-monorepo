@@ -1,4 +1,14 @@
 @import '@shadcn/base/root.css';
+@import '@fontsource-variable/inter/wght.css';
+@import '@fontsource-variable/victor-mono/wght.css';
+
+html {
+  font-size: 15px;
+}
+
+body {
+  font-family: 'Inter Variable', sans-serif;
+}
 
 #app {
   @apply bg-zinc-200;

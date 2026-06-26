@@ -107,7 +107,7 @@ export function LegacyLoginOTPForm(props: LegacyLoginOTPFormProps) {
   const t = useT()
   const formStrings = useFormStrings()
   const appStrings = useAppStrings()
-
+  
   const otpSchema = useMemo(() => createOtpVerificationSchema(t), [ t ])
 
   const { id, email } = props

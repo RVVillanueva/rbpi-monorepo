@@ -1,6 +1,7 @@
 import { z } from "@hono/zod-openapi";
 
 export const pagingQuerySchema = z.object({
+  search: z.string().optional(),
 
   page: z
     .coerce
@@ -19,18 +20,53 @@ export const pagingQuerySchema = z.object({
     .optional()
     .default(20),
 
-  column: z.string().optional(),
-  cursor: z.string().optional(),
+  column: z
+    .string()
+    .optional(),
+
+  cursor: z
+    .string()
+    .optional(),
+
 })
   .openapi('PagingQuery')
 
-export const pagingMetaSchema = z.object({
-  total: z.number().int(),
-  page: z.number().int(),
-  pageSize: z.number().int(),
-  nextPage: z.number().nullable().optional(),
-  nextCursor: z.string().nullable().optional(),
-})
+export const pagingMetaSchema = z
+  .object({
+    
+    total: z
+      .number()
+      .int(),
+
+    page: z
+      .number()
+      .int(),
+
+    pageSize: z
+      .number()
+      .int(),
+
+    nextPage: z
+      .number()
+      .nullable()
+      .optional(),
+
+    nextCursor: z
+      .string()
+      .nullable()
+      .optional(),
+
+    prevPage: z
+      .number()
+      .nullable()
+      .optional(),
+
+    prevCursor: z
+      .string()
+      .nullable()
+      .optional(),
+
+  })
   .openapi('PagingMeta')
 
 export const createPaginatedResponseSchema = 
@@ -42,5 +78,5 @@ export const createPaginatedResponseSchema =
       .openapi(refName)
 
 export function isCursorParams(params: RBPICore.PagingTypes.PagingParams) {
-  return 'cursor' in params && 'column' in params
+  return params && ('cursor' in params && 'column' in params)
 }

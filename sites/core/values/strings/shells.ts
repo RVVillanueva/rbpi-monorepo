@@ -115,12 +115,12 @@ export function useShellStrings() {
               {
                 icon: 'ShapesIcon',
                 label: 'Chart of accounts',
-                href: `/${userId}/a/${orgId}/coc`,
+                href: `/${userId}/a/${orgId}/l/coa`,
               },
               {
                 icon: 'NotebookTabsIcon',
-                label: 'Journal entries',
-                href: `/${userId}/a/${orgId}/je`,
+                label: 'Journals',
+                href: `/${userId}/a/${orgId}/l/je`,
               },
             ],
             categories: [

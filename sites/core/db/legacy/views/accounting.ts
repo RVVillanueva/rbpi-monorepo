@@ -1,11 +1,12 @@
 import { eq, inArray, notInArray, sql } from "drizzle-orm";
-import { mysqlView } from "drizzle-orm/mysql-core";
+import { alias, mysqlView } from "drizzle-orm/mysql-core";
 
 import {
     acctngBudget,
     acctngCostCenter,
     acctngGlaccounts,
     acctngJournaldetails,
+    acctngJournalIbtracker,
     acctngJournals,
     generalBranches,
     generalEmployees,
@@ -20,7 +21,7 @@ import {
     savingsSsaplacementdetails
 } from "~/db/legacy/migrations/schema";
 
-export type GenBranch = typeof branchesView.$inferSelect
+export type BranchesView = typeof branchesView.$inferSelect
 
 // @SQLVIEW: RBPI branches
 export const branchesView = mysqlView('branches_view')
@@ -59,6 +60,8 @@ export const glAccountsView = mysqlView('gl_accounts_view')
       })
       .from(acctngGlaccounts),
   )
+
+export type CostCentersView = typeof costCentersView.$inferSelect
 
 export const costCentersView = mysqlView('cost_centers_view')
   .as(
@@ -107,6 +110,8 @@ export const glJournalsView = mysqlView('gl_journals_view')
       .innerJoin(acctngGlaccounts, eq(acctngGlaccounts.glCode, acctngJournaldetails.glCode))
   )
 
+export type JournalAuditView = typeof journalAuditView.$inferSelect
+
 // @SQLVIEW: Journal entries with maker info
 export const journalAuditView = mysqlView('journal_audit_view')
   .as(
@@ -119,6 +124,7 @@ export const journalAuditView = mysqlView('journal_audit_view')
         postingTime: acctngJournals.timestamp.as('posting_time'),
         branchId: acctngJournals.journalBranch.as('branch_id'),
         branchName: generalBranches.name.as('branch_name'),
+        userLevel: acctngGlaccounts.userlevel.as('user_level'),
         makerId: acctngJournals.user.as('maker_id'),
         makerFullName: sql<string>`
           CONCAT(
@@ -150,13 +156,136 @@ export const journalAuditView = mysqlView('journal_audit_view')
           END
         `.as('net_movement'),
 
-        
+        status: sql<'active' | 'deleted'>`
+          CASE WHEN EXISTS (
+            SELECT 1 FROM acctng_journal_trail t
+            WHERE t.journalid = ${acctngJournals.journalid}
+            AND t.process = 'delete'
+          ) THEN 'deleted' ELSE 'active' END
+        `.as('status'),
       })
       .from(acctngJournals)
       .innerJoin(acctngJournaldetails, eq(acctngJournaldetails.journalid, acctngJournals.journalid))
       .innerJoin(acctngGlaccounts, eq(acctngGlaccounts.glCode, acctngJournaldetails.glCode))
       .innerJoin(generalBranches, eq(generalBranches.id, acctngJournals.journalBranch))
       .leftJoin(generalEmployees, eq(generalEmployees.id, acctngJournals.user))
+  )
+
+export type JournalHeaderView = typeof journalHeaderView.$inferSelect
+
+// @SQLVIEW: Journal headers with maker info
+export const journalHeaderView = mysqlView('journal_header_view')
+  .as(
+    qb => qb
+      .select({
+        journalId: acctngJournals.journalid.as('journal_id'),
+        ibJournalId: acctngJournals.ibjournalid.as('ib_journal_id'),
+        journalDate: acctngJournals.journalDate.as('journal_date'),
+        journalDescription: acctngJournals.journalDescription.as('journal_description'),
+        postingTime: acctngJournals.timestamp.as('posting_time'),
+        branchId: acctngJournals.journalBranch.as('branch_id'),
+        branchName: generalBranches.name.as('branch_name'),
+        makerId: acctngJournals.user.as('maker_id'),
+        makerFullName: sql<string>`
+          CONCAT(
+            ${ generalEmployees.firstname },
+            CASE WHEN ${ generalEmployees.middlename } <> '' THEN CONCAT(' ', ${ generalEmployees.middlename }, ' ') ELSE '' END,
+            ${ generalEmployees.lastname },
+            CASE WHEN ${ generalEmployees.suffixname } <> '' THEN CONCAT(' ', ${ generalEmployees.suffixname }) ELSE '' END
+          )
+        `.as('maker_full_name'),
+
+        lineCount: sql<number>`
+          (SELECT COUNT(*) FROM acctng_journaldetails d WHERE d.journalid = ${acctngJournals.journalid})
+        `.as('line_count'),
+
+        totalDebit: sql<number>`
+          (SELECT COALESCE(SUM(d.journal_details_debit), 0) FROM acctng_journaldetails d WHERE d.journalid = ${acctngJournals.journalid})
+        `.as('total_debit'),
+
+        totalCredit: sql<number>`
+          (SELECT COALESCE(SUM(d.journal_details_credit), 0) FROM acctng_journaldetails d WHERE d.journalid = ${acctngJournals.journalid})
+        `.as('total_credit'),
+
+        affectedAccounts: sql<string>`
+          (SELECT GROUP_CONCAT(DISTINCT g.gl_name ORDER BY g.gl_name SEPARATOR ', ')
+           FROM acctng_journaldetails d
+           JOIN acctng_glaccounts g ON g.gl_code = d.gl_code
+           WHERE d.journalid = ${acctngJournals.journalid})
+        `.as('affected_accounts'),
+
+        affectedGlCodes: sql<string>`
+          (SELECT GROUP_CONCAT(DISTINCT d.gl_code ORDER BY d.gl_code SEPARATOR ', ')
+           FROM acctng_journaldetails d
+           WHERE d.journalid = ${acctngJournals.journalid})
+        `.as('affected_gl_codes'),
+
+        totalAmount: sql<number>`
+          (SELECT COALESCE(SUM(d.journal_details_debit), 0) FROM acctng_journaldetails d WHERE d.journalid = ${acctngJournals.journalid})
+        `.as('total_amount'),
+
+        isBalanced: sql<boolean>`
+          (SELECT COALESCE(SUM(d.journal_details_debit), 0) = COALESCE(SUM(d.journal_details_credit), 0)
+          FROM acctng_journaldetails d WHERE d.journalid = ${acctngJournals.journalid})
+        `.as('is_balanced'),
+
+        status: sql<'active' | 'deleted'>`
+          CASE WHEN EXISTS (
+            SELECT 1 FROM acctng_journal_trail t
+            WHERE t.journalid = ${acctngJournals.journalid}
+            AND t.process = 'delete'
+          ) THEN 'deleted' ELSE 'active' END
+        `.as('status'),
+      })
+      .from(acctngJournals)
+      .leftJoin(generalBranches, eq(generalBranches.id, acctngJournals.journalBranch))
+      .leftJoin(generalEmployees, eq(generalEmployees.id, acctngJournals.user))
+  )
+
+const matchDetails = alias(acctngJournaldetails, 'ib_match_details')
+const matchJournal = alias(acctngJournals, 'ib_match_journal')
+const matchBranches = alias(generalBranches, 'ib_match_branch')
+
+// @SQLVIEW: Interbranch pairing
+export const interbranchPairingView = mysqlView('interbranch_pairing_view')
+  .as(
+    qb => qb
+      .select({
+        // origin side
+        journalDetailsId: acctngJournaldetails.journalDetailsId.as('journal_details_id'),
+        journalId: acctngJournals.journalid.as('journal_id'),
+        branchId: acctngJournals.journalBranch.as('branch_id'),
+        branchName: generalBranches.name.as('branch_name'),
+        journalDescription: acctngJournals.journalDescription.as('journal_description'),
+        debit: acctngJournaldetails.journalDetailsDebit.as('debit'),
+        credit: acctngJournaldetails.journalDetailsCredit.as('credit'),
+        glCode: acctngJournaldetails.glCode.as('gl_code'),
+
+        // matching side
+        matchJournalDetailsId: matchDetails.journalDetailsId.as('match_journal_details_id'),
+        matchJournalId: matchJournal.journalid.as('match_journal_id'),
+        matchBranchId: matchJournal.journalBranch.as('match_branch_id'),
+        matchBranchName: matchBranches.name.as('match_branch_name'),
+        matchDescription: matchJournal.journalDescription.as('match_description'),
+        matchDebit: matchDetails.journalDetailsDebit.as('match_debit'),
+        matchCredit: matchDetails.journalDetailsCredit.as('match_credit'),
+
+        pairStatus: sql<'posted' | 'pending'>`
+          CASE WHEN ${matchDetails.journalDetailsId} IS NULL THEN 'pending' ELSE 'posted' END
+        `.as('pair_status'),
+      })
+      .from(acctngJournaldetails)
+      .innerJoin(acctngJournals, eq(acctngJournals.journalid, acctngJournaldetails.journalid))
+      .innerJoin(generalBranches, eq(generalBranches.id, acctngJournals.journalBranch))
+      .innerJoin(acctngGlaccounts, eq(acctngGlaccounts.glCode, acctngJournaldetails.glCode))
+      .leftJoin(acctngJournalIbtracker, eq(acctngJournalIbtracker.journalDetailsId, acctngJournaldetails.journalDetailsId))
+      .leftJoin(matchDetails, eq(matchDetails.journalDetailsId, acctngJournalIbtracker.ibJournalDetailsId))
+      .leftJoin(matchJournal, eq(matchJournal.journalid, matchDetails.journalid))
+      .leftJoin(matchBranches, eq(matchBranches.id, matchJournal.journalBranch))
+      .where(
+        // only rows that are actually interbranch-flagged GL accounts
+        inArray(acctngGlaccounts.glParent, [108000, 203000])
+      )
   )
 
 export type AcctngBudget = typeof budgetsView.$inferSelect
@@ -189,7 +318,7 @@ export const budgetsView = mysqlView('budgets_view')
       .from(acctngBudget)
   )
 
-export type LoanPortfolio = typeof loanPortfoliosView.$inferSelect
+export type LoanPortfoliosView = typeof loanPortfoliosView.$inferSelect
 
 // @SQLVIEW: Loan portfolios
 export const loanPortfoliosView = mysqlView('loan_portfolios_view')
@@ -258,7 +387,7 @@ export const loanPortfoliosView = mysqlView('loan_portfolios_view')
       .leftJoin(lendingLoansecurities, eq(lendingLoansecurities.loansecurityid, lendingLoandetails.securityid))
   )
 
-export type LoanCollection = typeof loanCollectionView.$inferSelect
+export type LoanCollectionView = typeof loanCollectionView.$inferSelect
 
 // @SQLVIEW: Loan collections
 export const loanCollectionView = mysqlView('loan_collection_view')
@@ -292,7 +421,7 @@ export const loanCollectionView = mysqlView('loan_collection_view')
       )
   )
 
-export type LoanDisbursement = typeof loanDisbursementsView.$inferSelect
+export type LoanDisbursementsView = typeof loanDisbursementsView.$inferSelect
 
 // @SQLVIEW: Loan disbursements
 export const loanDisbursementsView = mysqlView('loan_disbursements_view')
@@ -324,7 +453,7 @@ export const loanDisbursementsView = mysqlView('loan_disbursements_view')
       )
   )
 
-export type DepositBalance = typeof depositBalancesView.$inferSelect
+export type DepositBalancesView = typeof depositBalancesView.$inferSelect
 
 // @SQLVIEW: Balances per account
 export const depositBalancesView = mysqlView('deposit_balances_view')
@@ -334,7 +463,7 @@ export const depositBalancesView = mysqlView('deposit_balances_view')
       .from(savingsAccounts)
   )
 
-export type TimeDepositPlacement = typeof timeDepositPlacementsView.$inferSelect
+export type TimeDepositPlacementsView = typeof timeDepositPlacementsView.$inferSelect
 
 // @SQLVIEW: Time deposit placements
 export const timeDepositPlacementsView = mysqlView('time_deposit_placements_view')

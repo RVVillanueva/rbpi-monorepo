@@ -9,7 +9,7 @@ export const dashboards = pgTable('dashboards', {
   name: text('name').notNull(),
   description: text('description').notNull().default(''),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow().$onUpdate(() => new Date()),
 })
 
 export const dashboardPanels = pgTable('dashboard_panels', {
@@ -23,7 +23,7 @@ export const dashboardPanels = pgTable('dashboard_panels', {
   dataSource: jsonb('data_source').$type<RBPICore.Analytics.PanelDatasource>().notNull(),
   config: jsonb('config').$type<RBPICore.Analytics.PanelConfig>().notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow().$onUpdate(() => new Date()),
 })
 
 export const dashboardLayouts = pgTable('dashboard_layouts', {

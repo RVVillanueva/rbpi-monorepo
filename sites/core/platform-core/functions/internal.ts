@@ -1,4 +1,4 @@
-import { members, organizationProfiles, organizations, users } from "@schema/index";
+import { members, organizationProfiles, organizations, organizationSettings, users } from "@schema/index";
 import { eq, getTableName } from "drizzle-orm";
 
 import { ok, err } from "neverthrow";
@@ -27,12 +27,16 @@ const legalName = 'Rural Bank of Pilar Sorsogon, Inc.'
 const legalSlug = 'rural-bank-of-pilar-sorsogon-inc'
 const legalShortName = 'rbpi'
 
+const defaultLocale = 'en-PH'
 const defaultCurrency = 'PHP'
 const defaultCountry = 'Philippines'
 const defaultState = 'Sorsogon'
 const defaultCity = 'Pilar'
 const defaultPostalCode = '4714'
 const defaultAddress = 'RBPI Building, Milleza St., Brgy. Dao, Poblacion, Pilar'
+
+const defaultFiscalYearMonth = 'Jan'
+const defaultFiscalYearDay = 1
 
 export const createRbpiOrganization = async (
   db: RBPICore.CoreDatabase,
@@ -60,6 +64,7 @@ export const createRbpiOrganization = async (
           shortName: legalShortName,
           slug: legalSlug,
 
+          defaultLocale,
           defaultCountry,
           defaultState,
           defaultCity,
@@ -68,6 +73,17 @@ export const createRbpiOrganization = async (
           defaultCurrency,
         })
         .returning()
+
+      // Create new organization settings
+      await tx
+        .insert(organizationSettings)
+        .values({
+          organizationId: org.id,
+          defaultLocale,
+          defaultCurrency,
+          fiscalYearStartMonth: defaultFiscalYearMonth,
+          fiscalYearStartDay: defaultFiscalYearDay,
+        })
 
       return org
     })
@@ -127,6 +143,7 @@ export const getOrganizationById = async (
   db: RBPICore.CoreDatabase,
   organizationId?: string,
 ) => {
+
   if (!organizationId) {
     return err(new NotFoundError(getTableName(organizations)))
   }

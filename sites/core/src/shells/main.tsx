@@ -1,3 +1,4 @@
+import { RBPIBreadcrumb } from "@components/breadcrumb";
 import { RBPIActionbar, RBPISidebar, RBPINavbar, RBPIPanel, RBPITaskbar, RBPIShellProvider } from "@components/shell";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@shadcn/base/components/ui/resizable";
 import { PropsWithChildren } from "react";
@@ -25,7 +26,8 @@ export function RBPICoreMainShell(props: RBPICoreMainShellProps) {
               <RBPIActionbar></RBPIActionbar>
 
               <RBPISidebar>
-                <main className='app-view'>
+                <main className='app-view p-4 overflow-x-hidden space-y-3.5'>
+                  <RBPIBreadcrumb />
                   { props.children }
                 </main>
               </RBPISidebar>
@@ -35,8 +37,8 @@ export function RBPICoreMainShell(props: RBPICoreMainShellProps) {
           <ResizableHandle />
 
           <ResizablePanel 
-            maxSize={'50%'}
-            defaultSize={326}>
+            maxSize={400}
+            defaultSize={400}>
             <aside className='grid grid-cols-1 grid-rows-1 h-full'>
               <RBPIPanel></RBPIPanel>
             </aside>

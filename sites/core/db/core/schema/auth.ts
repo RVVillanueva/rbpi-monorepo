@@ -22,7 +22,7 @@ export const sessions = pgTable('sessions', {
   activeOrganizationId: text('active_organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
   activeTeamId: text('active_team_id').references(() => teams.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow().$onUpdate(() => new Date()),
   state: jsonb('state').$type<RBPICore.Session.StateConfig>(),
 })
 
@@ -41,7 +41,7 @@ export const accounts = pgTable('accounts', {
   idToken: text('id_token'),
   password: text('password'),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow().$onUpdate(() => new Date()),
 })
 
 export const verifications = pgTable('verifications', {
@@ -50,7 +50,7 @@ export const verifications = pgTable('verifications', {
   value: text('value').notNull(),
   expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow().$onUpdate(() => new Date()),
 })
 
 export const apiKeys = pgTable('api_keys', {

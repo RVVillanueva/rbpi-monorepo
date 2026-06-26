@@ -1,4 +1,4 @@
-import { bigint, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { bigint, integer, pgTable, serial, smallint, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { users } from "./users";
 
 export const organizations = pgTable('organizations', {
@@ -17,7 +17,7 @@ export const organizationRoles = pgTable('organization_roles', {
   role: text('role'),
   permission: text('permission'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at'),
+  updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
 })
 
 export const members = pgTable('members', {
@@ -45,7 +45,7 @@ export const teams = pgTable('teams', {
   name: text('name'),
   organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at'),
+  updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
 })
 
 export const teamMembers = pgTable('team_members', {
@@ -70,6 +70,7 @@ export const organizationProfiles = pgTable('organization_profiles', {
   cover: text('cover_url'),
   logo: text('logo_url'),
   
+  defaultLocale: text('default_locale'),
   defaultCurrency: text('default_currency'),
   defaultCountry: text('default_country'),
   defaultState: text('default_state'),
@@ -78,5 +79,19 @@ export const organizationProfiles = pgTable('organization_profiles', {
   defaultAddress: text('default_address'),
 
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at'),
+  updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
+})
+
+export const organizationSettings = pgTable('organization_settings', {
+  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  organizationId: text('organization_id').unique().notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+
+  defaultCurrency: text('default_currency'),
+  defaultLocale: text('default_locale'),
+
+  fiscalYearStartMonth: text('fiscal_year_start_month'),
+  fiscalYearStartDay: smallint('fiscal_year_start_day'),
+  
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
 })

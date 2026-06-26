@@ -98,6 +98,38 @@ export const getRBPIBranchesRoute = createRoute({
   },
 })
 
+export type GetRBPIBranchByIdResult = z.infer<typeof getRBPIBranchByIdRoute['responses']['200']['content']['application/json']['schema']>
+export const getRBPIBranchByIdResponseSchema = z.object({
+  branch: z.custom<RBPICore.Legacy.AccountingBranchesView>(),
+})
+
+export const getRBPIBranchByIdRoute = createRoute({
+  method: 'get',
+  path: '/rbpi/branches/{branchId}',
+  request: {},
+  responses: {
+    [200]: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            branch: z.custom<RBPICore.Legacy.AccountingBranchesView>(),
+          })
+        },
+      },
+      description: '',
+    },
+
+    [400]: {
+      content: {
+        'application/json': {
+          schema: z.object({}),
+        },
+      },
+      description: '',
+    },
+  },
+})
+
 export const getRBPIBudgetsRoute = createRoute({
   method: 'get',
   path: '/rbpi/budgets',
@@ -159,6 +191,12 @@ export const getRBPIBudgetVsActualRoute = createRoute({
   },
 })
 
+export type GetRBPICostCentersResult = z.infer<typeof getRBPICostCentersRoute.responses['200']['content']['application/json']['schema']>
+export const getRBPICostCentersResponseSchema = createPaginatedResponseSchema(
+  z.custom<RBPICore.Legacy.AccountingCostCentersView>(),
+  "GetCostCentersResponseSchema",
+)
+
 export const getRBPICostCentersRoute = createRoute({
   method: 'get',
   path: '/rbpi/costCenters',
@@ -171,10 +209,7 @@ export const getRBPICostCentersRoute = createRoute({
     [200]: {
       content: {
         'application/json': {
-          schema: createPaginatedResponseSchema(
-            z.custom<RBPICore.Legacy.AccountingCostCentersView>(),
-            "GetCostCentersResponseSchema",
-          ),
+          schema: getRBPICostCentersResponseSchema,
         },
       },
       description: '',

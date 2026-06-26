@@ -46,7 +46,7 @@ export function useUserStrings() {
     journalsTableStrings: {
       dateHeader: t('root.tables.journals_table.date_header', 'Date'),
       journalIdHeader: t('root.tables.journals_table.journal_id_header', 'Journal ID'),
-      branchesHeader: t('root.tables.journals_table.branches_header', 'Branches'),
+      branchHeader: t('root.tables.journals_table.branches_header', 'Branch'),
       descriptionHeader: t('root.tables.journals_table.description_header', 'Description'),
       totalAmountHeader: t('root.tables.journals_table.total_amount_header', 'Total Amount'),
       debitHeader: t('root.tables.journals_table.debit_header', 'Debit'),

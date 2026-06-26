@@ -8,6 +8,7 @@ import {
   getRBPIAllJournalHeaderEntriesRoute, getRBPIFinancialSummary,
   getRBPIJournalsRoute,
   getRBPIJournalAuthorsRoute,
+  getRBPIBranchByIdRoute,
 } from "./specs/accounting";
 
 import { StatusCodes } from "http-status-codes";
@@ -123,6 +124,20 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
         prevPage: req.page-1 <= 0 ? req.page : req.page-1,
       },
     }, StatusCodes.OK)
+  })
+
+  .openapi(getRBPIBranchByIdRoute, async ctx => {
+    const branchId = Number(ctx.req.param('branchId'))
+
+    const db = ctx.get('db')
+
+    const [branch] = await db
+      .legacy
+      .selectDistinct()
+      .from(branchesView)
+      .where(eq(branchesView.id, branchId))
+
+    return ctx.json({ branch }, StatusCodes.OK)
   })
 
   .openapi(getRBPIBudgetsRoute, async ctx => {

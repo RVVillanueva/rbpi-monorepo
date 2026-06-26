@@ -1,4 +1,5 @@
 import { useLegacyRpcClient } from "@/context/RBPIClientRPCProvider";
+import { bufferObjectToString } from "@/lib/utils";
 import { AuthCurrency } from "@components/currency";
 import { 
   AvatarGroup, 
@@ -13,7 +14,9 @@ import { EllipsisVerticalIcon } from "@shadcn/base/icons";
 import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
+import { getRBPIBranchByIdResponseSchema } from "~/platform-legacy/rpc/handlers/specs/accounting";
 import { useUserStrings } from "~/values/strings/user";
 
 export const useJournalsTableColumns = () => {
@@ -113,7 +116,50 @@ export const useJournalsTableColumns = () => {
     },
     {
       id: "je-branches",
-      header: userStrings.journalsTableStrings.branchesHeader,
+      header: userStrings.journalsTableStrings.branchHeader,
+      size: 50,
+      cell: args => {
+        const { row } = args.cell
+        const client = useLegacyRpcClient()
+
+        const { data, isPending } = useQuery({
+          queryKey: [`journal_branch_${row.id}_k`],
+          queryFn: async () => {
+            const res = await client.rbpi.branches[':branchId'].$get({
+              param: {
+                branchId: row.original.branchId.toString(),
+              },
+            })
+
+            if (res.ok) {
+              const json = await res.json()
+              return getRBPIBranchByIdResponseSchema.parse(json)
+            }
+          },
+        })
+
+        const branch = useMemo(() => data?.branch, [ data ])
+
+        if (isPending || !branch) {
+          return (
+            <div>
+              <div className='flex items-center gap-1.5'>
+                <Skeleton className='h-8 w-8 bg-zinc-200 rounded-full' />
+                <Skeleton className='h-6 w-5 bg-zinc-100' />
+              </div>
+            </div>
+          )
+        }
+
+        return (
+          <div>
+            <div className='flex items-center gap-1.5 uppercase'>
+              <div className='h-6 w-6 bg-zinc-200 rounded-full'></div>
+              <span className='text-sm text-zinc-500'>{ branch.shortName }</span>
+            </div>
+          </div>
+        )
+      },
     },
     {
       id: "je-authors",
@@ -124,7 +170,7 @@ export const useJournalsTableColumns = () => {
         const client = useLegacyRpcClient()
         
         const { data: authors, isPending } = useQuery({
-          queryKey: [`authors_${row.id}_k`],
+          queryKey: [`journal_authors_${row.id}_k`],
           queryFn: async () => {
             const res = await client.rbpi.ledger.journals[":journalId"].authors.$get({
               param: { journalId: row.original.journalId.toString() },
@@ -158,13 +204,16 @@ export const useJournalsTableColumns = () => {
         if (authors.data.length > 1) {
           return (
             <div>
-              <AvatarGroup>
+              <AvatarGroup className='-space-x-5'>
                 { authors.data.map(author => (
-                  <Avatar title={author.makerFullName} key={author.makerId}>
-                    <AvatarImage src={author.makerAvatar} />
+                  <Avatar 
+                    className='grayscale-40 h-8 w-8'
+                    title={author.makerFullName} 
+                    key={author.makerId}>
+                    <AvatarImage src={`data:image/jpeg;base64,${bufferObjectToString(author.makerAvatar!)}`} />
                     <AvatarFallback>{ author.makerFullName.at(0) }</AvatarFallback>
                   </Avatar>
-                )) }
+                )).reverse() }
               </AvatarGroup>
             </div>
           )
@@ -173,8 +222,11 @@ export const useJournalsTableColumns = () => {
         return (
           <div>
             { authors.data.map(author => (
-              <Avatar title={author.makerFullName} key={author.makerId}>
-                <AvatarImage src={author.makerAvatar} />
+              <Avatar 
+                className='grayscale-40 h-8 w-8'
+                title={author.makerFullName} 
+                key={author.makerId}>
+                <AvatarImage src={`data:image/jpeg;base64,${bufferObjectToString(author.makerAvatar!)}`} />
                 <AvatarFallback>{ author.makerFullName.at(0) }</AvatarFallback>
               </Avatar>
             )) }

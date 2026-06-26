@@ -70,6 +70,7 @@ export const useAccountsChartTableColumns = () => {
             <Button
               size={'xs'}
               variant={'link'}
+              onClick={row.getToggleExpandedHandler()}
               className='font-normal cursor-pointer px-0 py-0'>
               <div className='flex items-center gap-1.5'>
                 <LandmarkIcon size={16} strokeWidth={2} className='mb-1 text-zinc-800' />

@@ -17,3 +17,7 @@ export function injectIntoStream(stream: ReadableStream, injection: string, befo
   stream.pipeTo(writable)
   return readable
 }
+
+export function bufferObjectToString(buf: { type: 'Buffer'; data: number[] }): string {
+  return new TextDecoder('utf-8').decode(new Uint8Array(buf.data))
+}

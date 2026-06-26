@@ -1,5 +1,6 @@
 import { useLegacyRpcClient } from "@/context/RBPIClientRPCProvider";
 import { BreadcrumbHandle } from "@components/breadcrumb";
+import { RBPICostCentersTable } from "@components/tables/CostCentersTable";
 import { useQuery } from "@tanstack/react-query";
 import { StatusCodes } from "http-status-codes";
 
@@ -24,8 +25,11 @@ export default function AccountingCostCenters() {
   })
 
   return (
-    <div>
+    <div className='container @container space-y-4'>
       
+      <section className='space-y-4'>
+        <RBPICostCentersTable />
+      </section>
     </div>
   )
 }

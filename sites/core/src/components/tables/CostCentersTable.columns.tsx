@@ -1,5 +1,10 @@
+import { useLegacyRpcClient } from '@/context/RBPIClientRPCProvider';
+import { Button } from '@shadcn/base/components/ui/button';
 import { Checkbox } from "@shadcn/base/components/ui/checkbox";
+import { EllipsisVerticalIcon } from '@shadcn/base/icons';
+import { useQuery } from '@tanstack/react-query';
 import { ColumnDef } from "@tanstack/react-table";
+import { getRBPICostCenterResponseSchema } from '~/platform-legacy/rpc/handlers/specs/accounting';
 import { useUserStrings } from "~/values/strings/user";
 
 
@@ -52,11 +57,57 @@ export const useCostCentersTableColumns = () => {
     {
       id: "costCenters-group",
       header: userStrings.costCentersTableStrings.groupHeader,
+      cell: args => {
+        const { row } = args
+        const client = useLegacyRpcClient()
+        
+        const { data, isPending } = useQuery({
+          queryKey: [`costCenters_parent_${row.id}_k`],
+          queryFn: async () => {
+            const res = await client.rbpi.costCenters[':costCenterId'].$get({
+              param: {
+                costCenterId: row.original.parent.toString(),
+              },
+            })
+
+            if (res.ok) {
+              const json = await res.json()
+              return getRBPICostCenterResponseSchema.parse(json)?.costCenter
+            }
+          },
+        })
+
+        if (isPending || !data) {
+          return (
+            <div>
+
+            </div>
+          )
+        }
+
+        return (
+          <div>
+            <span>{ data.name }</span>
+          </div>
+        )
+      },
     },
     {
       id: "costCenters-action",
       header: userStrings.actionTableHeaderString,
       size: 48,
+      cell: args => {
+
+        return (
+          <div>
+            <Button
+              size={'icon-xs'}
+              variant={'ghost'}>
+              <EllipsisVerticalIcon />
+            </Button>
+          </div>
+        )
+      },
     },
   ]
 

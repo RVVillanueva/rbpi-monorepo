@@ -1,6 +1,7 @@
 import { useT } from "@/context/hono";
 import { useRBPIAuthContext } from "@/context/RBPIAuthProvider";
 import { useMemo } from "react";
+import { createUniqueId } from '~/platform-core/helpers/struct';
 
 
 export function useShellStrings() {
@@ -49,6 +50,7 @@ export function useShellStrings() {
             'root.shells.action_bar.menu_items.file.title', 
             'File',
           ),
+          href: '',
           subMenuItems: [],
         },
         {
@@ -56,6 +58,7 @@ export function useShellStrings() {
             'root.shells.action_bar.menu_items.edit.title', 
             'Edit',
           ),
+          href: '',
           subMenuItems: [],
         },
         {
@@ -63,6 +66,7 @@ export function useShellStrings() {
             'root.shells.action_bar.menu_items.view.title', 
             'View',
           ),
+          href: '',
           subMenuItems: [],
         },
         {
@@ -70,6 +74,7 @@ export function useShellStrings() {
             'root.shells.action_bar.menu_items.actions.title', 
             'Actions',
           ),
+          href: '',
           subMenuItems: [],
         },
         {
@@ -77,13 +82,59 @@ export function useShellStrings() {
             'root.shells.action_bar.menu_items.reports.title',
             'Reports',
           ),
-          subMenuItems: [],
+          href: '',
+          subMenuItems: [
+            {
+              title: t(
+                'root.shells.action_bar.menu_items.reports.financial_reports',
+                'Financial Reports',
+              ),
+              href: '',
+              subMenuItems: [
+                {
+                  title: t(
+                    'root.shells.action_bar.menu_items.reports.financial_reports.balance_sheet',
+                    'Balance Sheet',
+                  ),
+                  href: `/${userId}/a/${orgId}/reports/bs/${createUniqueId()}`,
+                  subMenuItems: [],
+                },
+                {
+                  title: t(
+                    'root.shells.action_bar.menu_items.reports.financial_reports.income_statement',
+                    'Income Statement (P&L)',
+                  ),
+                  subMenuItems: [],
+                  href: `/${userId}/a/${orgId}/reports/is/${createUniqueId()}`,
+                },
+              ],
+            },
+            
+            {
+              title: t(
+                'root.shells.action_bar.menu_items.reports.accountant_reports',
+                'Accountant & Taxes',
+              ),
+              href: '',
+              subMenuItems: [
+                {
+                  title: t(
+                    'root.shells.action_bar.menu_items.reports.accountant_reports.trial_balance',
+                    'Trial Balance',
+                  ),
+                  href: `/${userId}/a/${orgId}/reports/tb/${createUniqueId()}`,
+                  subMenuItems: [],
+                },
+              ],
+            },
+          ],
         },
         {
           title: t(
             'root.shells.action_bar.menu_items.help.title',
             'Help',
           ),
+          href: '',
           subMenuItems: [],
         },
       ],

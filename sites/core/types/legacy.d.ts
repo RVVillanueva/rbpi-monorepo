@@ -4,7 +4,7 @@ declare module RBPICore {
 
   declare namespace Legacy {
 
-    type HREmployeesView = import('~/db/legacy/views/hr').GeneralEmployee
+    type HREmployeesView = import('~/db/legacy/views/hr').HREmployeesView
     type HRAttendancesView = import('~/db/legacy/views/hr').HRAttendancesView
 
     type AccountingBranchesView = import('~/db/legacy/views/accounting').BranchesView

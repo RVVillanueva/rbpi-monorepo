@@ -1,11 +1,10 @@
-import { ExpandedState, flexRender, getCoreRowModel, getExpandedRowModel, useReactTable } from "@tanstack/react-table";
-import { useAccountsChartTableColumns } from "./AccountsChartTable.columns";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@shadcn/base/components/ui/table";
-import { PropsWithChildren, useMemo, useState } from "react";
 import { useRBPIAccountingContext } from "@/context/RBPIAccountingContextProvider";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@shadcn/base/components/ui/table";
+import { ExpandedState, flexRender, getCoreRowModel, getExpandedRowModel, useReactTable } from "@tanstack/react-table";
+import { PropsWithChildren, useMemo, useState } from "react";
 import { TrialBalanceResult } from "~/platform-legacy/functions/internal";
 import { useAppStrings } from "~/values/strings/app";
-import { AuthCurrency } from "@components/currency";
+import { useAccountsChartTableColumns } from "./AccountsChartTable.columns";
 
 type AccountsChartTableProps = PropsWithChildren<{
   accountType: RBPICore.ChartOfAccountsBasicUnit
@@ -41,7 +40,12 @@ export function AccountsChartTable({ accountType, accounts }: AccountsChartTable
               key={headerGroup.id}>
               { headerGroup.headers.map(header => {
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead 
+                    style={{
+                      minWidth: header.column.columnDef.size,
+                      maxWidth: header.column.columnDef.size,
+                    }}
+                    key={header.id}>
                     { header.isPlaceholder ? null : flexRender(
                       header.column.columnDef.header,
                       header.getContext(),
@@ -91,12 +95,6 @@ export function AccountsChartTable({ accountType, accounts }: AccountsChartTable
             </TableCell>
             <TableCell>
               
-            </TableCell>
-            <TableCell>
-              <AuthCurrency amount={totalDebits} />
-            </TableCell>
-            <TableCell>
-              <AuthCurrency amount={totalCredits} />
             </TableCell>
             <TableCell>
 
@@ -165,7 +163,7 @@ export function RBPIChartOfAccountsTable() {
   }
 
   return (
-    <div className='max-w-[88ch] space-y-2.5'>
+    <div className='max-w-[90ch] space-y-2.5'>
       { Object.entries(accounts).map(([key, value], i) => {
         const unit = key as RBPICore.ChartOfAccountsBasicUnit
         const usedStrings = sectionStrings[unit]

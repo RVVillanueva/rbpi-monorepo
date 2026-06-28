@@ -1,9 +1,9 @@
 import { RBPICoreMainShell } from "@/shells/main";
 import { Outlet, redirect } from "react-router";
 
-import { Route } from "./+types/_user"
 import { RBPIAuthContextProvider } from "@/context/RBPIAuthProvider";
 import { getOrganizationById } from "~/platform-core/functions/internal";
+import { Route } from "./+types/_user";
 
 export const loader = async (args: Route.LoaderArgs) => {
   const { hono } = args.context

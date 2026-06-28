@@ -1,5 +1,5 @@
-import { createContext, PropsWithChildren, useContext, useMemo } from "react";
 import { authClient } from "@/auth/client";
+import { createContext, PropsWithChildren, useContext, useMemo } from "react";
 
 import type { Route } from "../pages/+types/_user";
 

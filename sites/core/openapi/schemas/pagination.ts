@@ -18,7 +18,7 @@ export const pagingQuerySchema = z.object({
     .min(1)
     .max(500)
     .optional()
-    .default(20),
+    .default(10),
 
   column: z
     .string()

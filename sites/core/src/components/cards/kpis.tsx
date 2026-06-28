@@ -1,18 +1,14 @@
 import { useRBPIAccountingContext } from "@/context/RBPIAccountingContextProvider";
 import { AuthCurrency } from "@components/currency";
-import { Button } from "@shadcn/base/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@shadcn/base/components/ui/card";
 import { Skeleton } from "@shadcn/base/components/ui/skeleton";
 import { cn } from "@shadcn/base/lib/utils";
 import { useMemo } from "react";
 import { useAppStrings } from "~/values/strings/app";
 
-import {
-  EyeIcon,
-} from "@shadcn/base/icons";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@shadcn/base/components/ui/tooltip";
 import { useRBPIAuthContext } from "@/context/RBPIAuthProvider";
 import { Separator } from "@shadcn/base/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@shadcn/base/components/ui/tooltip";
 import { useUserStrings } from "~/values/strings/user";
 
 export function FinancialPositionView() {

@@ -4,10 +4,10 @@ import { and, between, eq, getViewName, inArray, notInArray, SQL, sql, sum } fro
 import { err, ok } from "neverthrow";
 import { AppLoadContext } from "react-router";
 import { NotFoundError } from "~/db/errors";
-import { 
+import {
   acctngGlaccounts,
-  employeesView, 
-  glAccountsView, 
+  employeesView,
+  glAccountsView,
   journalAuditView,
 } from "~/db/legacy/schema";
 
@@ -96,7 +96,7 @@ export interface ComputeFinancialSummaryResult {
   }[]
 }
 
-export const computeFinancialSummaryFigures = async (
+export const  computeFinancialSummaryFigures = async (
   hono: AppLoadContext['hono'],
   args: ComputeFinancialSummaryFiguresArgs,
 ): Promise<ComputeFinancialSummaryResult> => {
@@ -228,6 +228,7 @@ export interface TrialBalanceResult {
   accountSummary: {
     debit: number
     credit: number
+    netMovement: number
   },
   children: TrialBalanceResult[]
 }
@@ -271,7 +272,7 @@ export const computeFullTrialBalanceFigures = async (
     const conditions = [
       between(
         journalAuditView.journalDate,
-        sql`${format(period, 'yyyy-MM-dd')}`,
+        sql`${format(period, 'yyyy-MM-dd')}`, // Only get the transactions made on the period.
         sql`${format(period, 'yyyy-MM-dd')}`,
       )
     ]
@@ -295,6 +296,7 @@ export const computeFullTrialBalanceFigures = async (
         glCode: journalAuditView.glCode,
         debit:  sum(journalAuditView.debit).as('total_debit'),
         credit: sum(journalAuditView.credit).as('total_credit'),
+        netMovement: sum(journalAuditView.netMovement).as('net_movement'),
       })
       .from(journalAuditView)
       .where(and(...conditions))
@@ -304,6 +306,7 @@ export const computeFullTrialBalanceFigures = async (
       summaries.map(s => [s.glCode, {
         debit: Number(s.debit ?? 0), 
         credit: Number(s.credit ?? 0),
+        netMovement: Number(s.netMovement ?? 0),
       }])
     )
 
@@ -316,17 +319,22 @@ export const computeFullTrialBalanceFigures = async (
           (acc, child) => ({
             debit:  acc.debit  + child.accountSummary.debit,
             credit: acc.credit + child.accountSummary.credit,
+            netMovement: acc.netMovement + child.accountSummary.netMovement,
           }),
-          { debit: 0, credit: 0 }
+          { debit: 0, credit: 0, netMovement: 0 }
         )
 
-        const ownSummary = childs.length === 0 ? (summaryMap.get(account.code) ?? { debit: 0, credit: 0 }) : { debit: 0, credit: 0 }
+        const ownSummary = childs.length === 0 ? 
+          (summaryMap.get(account.code) ?? 
+            { debit: 0, credit: 0, netMovement: 0 }) : 
+            { debit: 0, credit: 0, netMovement: 0 }
 
         return {
           parent: account,
           accountSummary: {
             debit: ownSummary.debit + rolledUp.debit,
             credit: ownSummary.credit + rolledUp.credit,
+            netMovement: ownSummary.netMovement + rolledUp.netMovement,
           },
           children,
         }
@@ -348,7 +356,6 @@ export const computeFullTrialBalanceFigures = async (
     if (args.branchIds?.length) {
       for (const branchId of args.branchIds) {
         if (branchId === 0) continue
-
         tasks.push(computeForPeriodAndBranch(period, branchId))
       }
     }

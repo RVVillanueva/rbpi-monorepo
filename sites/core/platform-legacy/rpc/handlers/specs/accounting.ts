@@ -1,7 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createPaginatedResponseSchema, pagingQuerySchema } from "~/openapi/schemas/pagination";
-import { 
-  type ComputeFinancialSummaryResult, 
+import {
+  type ComputeFinancialSummaryResult,
   type ComputedFullTrialBalanceResult,
 } from "~/platform-legacy/functions/internal";
 
@@ -66,6 +66,13 @@ export const getRBPIGlAccountByCodeRoute = createRoute({
   },
 })
 
+export type GetRBPIBranchesResult = z.infer<typeof getRBPIBranchesRoute['responses']['200']['content']['application/json']['schema']>
+
+export const getRBPIBranchesResponseSchema = createPaginatedResponseSchema(
+  z.custom<RBPICore.Legacy.AccountingBranchesView>(),
+  "GetBranchesResponseSchema",
+)
+
 export const getRBPIBranchesRoute = createRoute({
   method: 'get',
   path: '/rbpi/branches',
@@ -78,10 +85,7 @@ export const getRBPIBranchesRoute = createRoute({
     [200]: {
       content: {
         'application/json': {
-          schema: createPaginatedResponseSchema(
-            z.custom<RBPICore.Legacy.AccountingBranchesView>(),
-            "GetBranchesResponseSchema",
-          ),
+          schema: getRBPIBranchesResponseSchema,
         },
       },
       description: '',
@@ -222,6 +226,37 @@ export const getRBPICostCentersRoute = createRoute({
         },
       },
       description: 'Unimplemented',
+    },
+  },
+})
+
+export type GetRBPICostCenterRoute = z.infer<typeof getRBPICostCenterRoute.responses['200']['content']['application/json']['schema']>
+
+export const getRBPICostCenterResponseSchema = z.object({
+  costCenter: z.custom<RBPICore.Legacy.AccountingCostCentersView>(),
+})
+
+export const getRBPICostCenterRoute = createRoute({
+  method: 'get',
+  path: '/rbpi/costCenters/{costCenterId}',
+  request: {},
+  responses: {
+    [200]: {
+      content: {
+        'application/json': {
+          schema: getRBPICostCenterResponseSchema.openapi('GetRBPICostCenterRoute'),
+        },
+      },
+      description: '',
+    },
+
+    [400]: {
+      content: {
+        'application/json': {
+          schema: z.object({}),
+        },
+      },
+      description: '',
     },
   },
 })

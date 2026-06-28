@@ -1,13 +1,13 @@
 import { useBranchIdFromSearch, useCutoffDateFromSearch } from "@components/controls/filters";
 import { useQuery } from "@tanstack/react-query";
-import { createContext, PropsWithChildren, useContext } from "react";
-import { useLegacyRpcClient } from "./RBPIClientRPCProvider";
 import { format } from "date-fns";
+import { createContext, PropsWithChildren, useContext } from "react";
 import { ComputedFullTrialBalanceResult, ComputeFinancialSummaryResult } from "~/platform-legacy/functions/internal";
-import { 
-  type GetRBPIJournalsResult, 
+import {
+  type GetRBPIJournalsResult,
   getRBPIJournalsRouteResponseSchema,
 } from "~/platform-legacy/rpc/handlers/specs/accounting";
+import { useLegacyRpcClient } from "./RBPIClientRPCProvider";
 
 
 // @TODO: Refactor Compute* types to rely on the specs/*.ts definition files.

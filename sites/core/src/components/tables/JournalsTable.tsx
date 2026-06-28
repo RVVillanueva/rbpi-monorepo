@@ -1,9 +1,9 @@
-import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { useJournalsTableColumns } from "./JournalsTable.columns";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@shadcn/base/components/ui/table";
 import { useRBPIAccountingContext } from "@/context/RBPIAccountingContextProvider";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@shadcn/base/components/ui/table";
+import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useMemo } from "react";
 import { useAppStrings } from "~/values/strings/app";
+import { useJournalsTableColumns } from "./JournalsTable.columns";
 
 export function JournalsTable() {
   const rbpi = useRBPIAccountingContext()
@@ -39,7 +39,12 @@ export function JournalsTable() {
               key={headerGroup.id}>
               { headerGroup.headers.map(header => {
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead 
+                    style={{
+                      minWidth: header.column.columnDef.size,
+                      maxWidth: header.column.columnDef.size,
+                    }}
+                    key={header.id}>
                     { header.isPlaceholder ? null : flexRender(
                       header.column.columnDef.header,
                       header.getContext(),
@@ -61,7 +66,9 @@ export function JournalsTable() {
                   { row.getVisibleCells().map(cell => {
 
                     return (
-                      <TableCell className='align-top pt-2' key={cell.id}>
+                      <TableCell 
+                        className='align-top pt-2' 
+                        key={cell.id}>
                         { flexRender(cell.column.columnDef.cell, cell.getContext()) }
                       </TableCell>
                     )

@@ -2,23 +2,23 @@ import { eq, inArray, notInArray, sql } from "drizzle-orm";
 import { alias, mysqlView } from "drizzle-orm/mysql-core";
 
 import {
-    acctngBudget,
-    acctngCostCenter,
-    acctngGlaccounts,
-    acctngJournaldetails,
-    acctngJournalIbtracker,
-    acctngJournals,
-    generalBranches,
-    generalEmployees,
-    lendingLoanclassifications,
-    lendingLoandetails,
-    lendingLoanproducts,
-    lendingLoansecurities,
-    lendingPaymentdetails,
-    lendingPayments,
-    lendingPaymentsor,
-    savingsAccounts,
-    savingsSsaplacementdetails
+  acctngBudget,
+  acctngCostCenter,
+  acctngGlaccounts,
+  acctngJournaldetails,
+  acctngJournalIbtracker,
+  acctngJournals,
+  generalBranches,
+  generalEmployees,
+  lendingLoanclassifications,
+  lendingLoandetails,
+  lendingLoanproducts,
+  lendingLoansecurities,
+  lendingPaymentdetails,
+  lendingPayments,
+  lendingPaymentsor,
+  savingsAccounts,
+  savingsSsaplacementdetails
 } from "~/db/legacy/migrations/schema";
 
 export type BranchesView = typeof branchesView.$inferSelect

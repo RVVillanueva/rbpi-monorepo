@@ -1,10 +1,10 @@
 import { useLegacyRpcClient } from "@/context/RBPIClientRPCProvider";
 import { bufferObjectToString } from "@/lib/utils";
 import { AuthCurrency } from "@components/currency";
-import { 
-  AvatarGroup, 
-  Avatar, 
-  AvatarFallback, 
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarGroup,
   AvatarImage,
 } from "@shadcn/base/components/ui/avatar";
 import { Button } from "@shadcn/base/components/ui/button";

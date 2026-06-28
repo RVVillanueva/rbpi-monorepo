@@ -1,25 +1,46 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { 
-  getRBPIBalanceSheetRoute, getRBPIBudgetVsActualRoute,
-  getRBPIBranchesRoute, getRBPIBudgetsRoute, getRBPICostCentersRoute, 
-  getRBPIGlAccountByCodeRoute, getRBPIGlAccountJournalEntriesRoute, 
-  getRBPIGlAccountsRoute, getRBPIIncomeStatementRoute, getRBPIJournalAuditRoute, 
-  getRBPIJournalEntryByIdRoute, getRBPITrialBalanceRoute,
-  getRBPIAllJournalHeaderEntriesRoute, getRBPIFinancialSummary,
-  getRBPIJournalsRoute,
-  getRBPIJournalAuthorsRoute,
+import {
+  getRBPIAllJournalHeaderEntriesRoute,
+  getRBPIBalanceSheetRoute,
   getRBPIBranchByIdRoute,
+  getRBPIBranchesRoute,
+  getRBPIBudgetsRoute,
+  getRBPIBudgetVsActualRoute,
+  getRBPICostCenterRoute,
+  getRBPICostCentersRoute,
+  getRBPIFinancialSummary,
+  getRBPIGlAccountByCodeRoute,
+  getRBPIGlAccountJournalEntriesRoute,
+  getRBPIGlAccountsRoute,
+  getRBPIIncomeStatementRoute,
+  getRBPIJournalAuditRoute,
+  getRBPIJournalAuthorsRoute,
+  getRBPIJournalEntryByIdRoute,
+  getRBPIJournalsRoute,
+  getRBPITrialBalanceRoute,
 } from "./specs/accounting";
 
 import { StatusCodes } from "http-status-codes";
+import {
+  acctngJournalTrail,
+  branchesView,
+  budgetsView,
+  costCentersView,
+  employeesView,
+  glAccountsView,
+  journalAuditView,
+  journalHeaderView
+} from "~/db/legacy/schema";
 import { isCursorParams } from "~/openapi/schemas/pagination";
-import { acctngJournalTrail, branchesView, budgetsView, costCentersView, employeesView, generalEmployees, glAccountsView, journalAuditView, journalHeaderView } from "~/db/legacy/schema";
-import { asc, count, desc, eq, between, and, sql } from "drizzle-orm";
-import { 
-  computeFinancialSummaryFigures, 
+
+import { and, asc, between, count, desc, eq, ne } from "drizzle-orm";
+
+import { startOfYear } from 'date-fns';
+import {
+  computeFinancialSummaryFigures,
   computeFullTrialBalanceFigures,
 } from "~/platform-legacy/functions/internal";
-import { addDays, subDays } from "date-fns";
+
 
 const accountingRpc = new OpenAPIHono<HonoCloudflare>()
 
@@ -204,7 +225,9 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
           .from(costCentersView)
           .offset((req.page-1) * req.pageSize)
           .limit(req.pageSize)
-          .$dynamic(),
+          .where(
+            ne(costCentersView.parent, 0),
+          ),
         
       ])
 
@@ -225,6 +248,20 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
     }, StatusCodes.OK)
   })
 
+  .openapi(getRBPICostCenterRoute, async ctx => {
+    const db = ctx.get('db')
+    const costCenterId = Number(ctx.req.param('costCenterId'))
+    
+    const [costCenter] = await db.legacy
+      .select()
+      .from(costCentersView)
+      .where(
+        eq(costCentersView.id, costCenterId)
+      )
+
+    return ctx.json({ costCenter }, StatusCodes.OK)
+  })
+
   .openapi(getRBPIJournalsRoute, async ctx => {
     const req = ctx.req.valid('query')
     const db = ctx.get('db')
@@ -236,8 +273,8 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
     const conditions = [
       ...req.periods.map(
         period => {
-          const priorDay = subDays(period, 1)
-          return between(journalHeaderView.postingTime, priorDay, addDays(period, 1))
+          const startPeriod = startOfYear(period)
+          return between(journalHeaderView.journalDate, startPeriod, period)
         }
       )
     ]
@@ -391,5 +428,5 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
     return ctx.json(res, StatusCodes.OK)
   })
 
-export { accountingRpc }
+export { accountingRpc };
 

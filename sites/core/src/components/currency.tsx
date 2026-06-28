@@ -71,6 +71,15 @@ export function Currency({
       }
     }
 
+    if (amount < 0) {
+      return `(${ new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      }).format(-amount) })`
+    }
+
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,

@@ -1,5 +1,5 @@
 import { RBPIBreadcrumb } from "@components/breadcrumb";
-import { RBPIActionbar, RBPISidebar, RBPINavbar, RBPIPanel, RBPITaskbar, RBPIShellProvider } from "@components/shell";
+import { RBPIActionbar, RBPINavbar, RBPIPanel, RBPIShellProvider, RBPISidebar, RBPITaskbar } from "@components/shell";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@shadcn/base/components/ui/resizable";
 import { PropsWithChildren } from "react";
 

@@ -1,10 +1,10 @@
+import { useLegacyRpcClient } from "@/context/RBPIClientRPCProvider";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@shadcn/base/components/ui/table";
+import { useQuery } from "@tanstack/react-query";
 import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { getRBPICostCentersResponseSchema } from "~/platform-legacy/rpc/handlers/specs/accounting";
 import { useAppStrings } from "~/values/strings/app";
 import { useCostCentersTableColumns } from "./CostCentersTable.columns";
-import { useQuery } from "@tanstack/react-query";
-import { useLegacyRpcClient } from "@/context/RBPIClientRPCProvider";
-import { getRBPICostCentersResponseSchema } from "~/platform-legacy/rpc/handlers/specs/accounting";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@shadcn/base/components/ui/table";
 
 export function CostCentersTable() {
   const columns = useCostCentersTableColumns()
@@ -14,14 +14,13 @@ export function CostCentersTable() {
     queryKey: ['cost_centers_table_k'],
     queryFn: async () => {
       const res = await client.rbpi.costCenters.$get({
-        query: {
-          pageSize: 30,
-        },
+        query: {},
       })
 
       if (res.ok) {
         const json = await res.json()
-        return getRBPICostCentersResponseSchema.parse(json)
+        const costCenters = getRBPICostCentersResponseSchema.parse(json)
+        return costCenters
       }
     },
   })
@@ -53,7 +52,12 @@ export function CostCentersTable() {
               key={headerGroup.id}>
               { headerGroup.headers.map(header => {
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead 
+                    style={{
+                      minWidth: header.column.columnDef.size,
+                      maxWidth: header.column.columnDef.size,
+                    }}
+                    key={header.id}>
                     { header.isPlaceholder ? null : flexRender(
                       header.column.columnDef.header,
                       header.getContext(),
@@ -75,7 +79,7 @@ export function CostCentersTable() {
                   { row.getVisibleCells().map(cell => {
 
                     return (
-                      <TableCell className='align-top pt-2' key={cell.id}>
+                      <TableCell className='pt-2' key={cell.id}>
                         { flexRender(cell.column.columnDef.cell, cell.getContext()) }
                       </TableCell>
                     )

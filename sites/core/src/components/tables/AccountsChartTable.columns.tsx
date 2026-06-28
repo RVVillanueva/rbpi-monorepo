@@ -1,10 +1,8 @@
-import { AuthCurrency } from "@components/currency";
+import { AuthCurrency } from '@components/currency';
 import { Button } from "@shadcn/base/components/ui/button";
 import { Checkbox } from "@shadcn/base/components/ui/checkbox";
 import { ChevronDownIcon, ChevronRightIcon, EllipsisVerticalIcon, LandmarkIcon } from "@shadcn/base/icons";
-import { cn } from "@shadcn/base/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
-import { Link } from "react-router";
 import { type TrialBalanceResult } from "~/platform-legacy/functions/internal";
 import { useAppStrings } from "~/values/strings/app";
 import { useUserStrings } from "~/values/strings/user";
@@ -17,7 +15,7 @@ export const useAccountsChartTableColumns = () => {
   const columns: ColumnDef<TrialBalanceResult>[] = [
     {
       id: "accounts-checkBoxes",
-      size: 48,
+      size: 40,
       header: () => {
 
         return (
@@ -39,7 +37,7 @@ export const useAccountsChartTableColumns = () => {
       id: "accounts-glCode",
       accessorKey: "parent.code",
       header: userStrings.accountsTableStrings.glCodeHeader,
-      size: 100,
+      size: 50,
     },
     {
       id: "accounts-accountName",
@@ -82,35 +80,25 @@ export const useAccountsChartTableColumns = () => {
       },
     },
     {
-      id: "accounts-debits",
-      header: userStrings.accountsTableStrings.debitsHeader,
-      size: 140,
+      id: "accounts-netMovement",
+      size: 50,
       cell: args => {
         const { row } = args
-        const account = row.original
+
+        if (row.original.accountSummary.netMovement == 0) {
+          return (
+            <div className=''></div>
+          )
+        }
 
         return (
-          <div className={
-            cn(account.accountSummary.debit === 0 ? 'text-zinc-500' : '')
-          }>
-            <AuthCurrency amount={account.accountSummary.debit} />
-          </div>
-        )
-      },
-    },
-    {
-      id: "accounts-credits",
-      header: userStrings.accountsTableStrings.creditsHeader,
-      size: 140,
-      cell: args => {
-        const { row } = args
-        const account = row.original
-
-        return (
-          <div className={
-            cn(account.accountSummary.credit === 0 ? 'text-zinc-500' : '')
-          }>
-            <AuthCurrency amount={account.accountSummary.credit} />
+          <div className='cursor-pointer'>
+            <Button
+              size={'xs'}
+              variant={'link'}
+              className='cursor-pointer'>
+              <AuthCurrency amount={row.original.accountSummary.netMovement} />
+            </Button>
           </div>
         )
       },

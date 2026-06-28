@@ -1,17 +1,15 @@
 
 import {
-    Fragment,
+  Fragment,
   PropsWithChildren,
-  useCallback,
   useMemo,
-  useState,
+  useState
 } from "react";
 
 import {
   Menubar,
   MenubarMenu,
-  MenubarSeparator,
-  MenubarTrigger,
+  MenubarTrigger
 } from "@shadcn/base/components/ui/menubar";
 
 import {
@@ -27,26 +25,26 @@ import {
 } from "@shadcn/base/components/ui/input-group";
 
 import {
-  HouseIcon,
-  ScaleIcon,
-  PiggyBankIcon,
-  CirclePileIcon,
-  DatabaseIcon,
-  SearchIcon,
   BotMessageSquareIcon,
   ChevronDownIcon,
   CircleChevronRightIcon,
-  MessageCircleIcon,
+  CirclePileIcon,
+  DatabaseIcon,
   EllipsisIcon,
-  XIcon,
-  PlusIcon,
-  LogOutIcon,
-  TvMinimalIcon,
-  FormIcon,
-  LogsIcon,
-  ShapesIcon,
-  NotebookTabsIcon,
   FileUserIcon,
+  FormIcon,
+  HouseIcon,
+  LogOutIcon,
+  LogsIcon,
+  MessageCircleIcon,
+  NotebookTabsIcon,
+  PiggyBankIcon,
+  PlusIcon,
+  ScaleIcon,
+  SearchIcon,
+  ShapesIcon,
+  TvMinimalIcon,
+  XIcon,
 } from "@shadcn/base/icons";
 
 const icons = {
@@ -59,19 +57,19 @@ const icons = {
 
 type ValidIconsType = keyof typeof icons
 
-import { RBPIWindowProvider, useRBPIWindowManagerContext } from "./window";
-import { RBPICommandCenterProvider, useRBPICommandCenterContext } from "./command";
-import { Button } from "@shadcn/base/components/ui/button";
-import { Skeleton } from "@shadcn/base/components/ui/skeleton";
-import { Link, useFetcher, useLocation, useNavigate, } from "react-router";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@shadcn/base/components/ui/tooltip";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuPortal, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@shadcn/base/components/ui/dropdown-menu";
-import { useShellStrings } from "~/values/strings/shells";
 import { useRBPIAuthContext } from "@/context/RBPIAuthProvider";
-import { useAppStrings } from "~/values/strings/app";
-import { Separator } from "@shadcn/base/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@shadcn/base/components/ui/avatar";
+import { Button } from "@shadcn/base/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuPortal, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@shadcn/base/components/ui/dropdown-menu";
+import { Separator } from "@shadcn/base/components/ui/separator";
+import { Skeleton } from "@shadcn/base/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@shadcn/base/components/ui/tooltip";
+import { Link, useFetcher, useLocation, useNavigate, } from "react-router";
+import { useAppStrings } from "~/values/strings/app";
+import { useShellStrings } from "~/values/strings/shells";
 import { RBPIBreadcrumbProvider } from "./breadcrumb";
+import { RBPICommandCenterProvider, useRBPICommandCenterContext } from "./command";
+import { RBPIWindowProvider, useRBPIWindowManagerContext } from "./window";
 
 type RBPIShellProviderProps = PropsWithChildren<{
   
@@ -245,65 +243,82 @@ export function RBPINavbar(props: RBPINavbarProps) {
 
 export type RBPIActionbarProps = PropsWithChildren<{}>
 
+type ActionbarStrings = ReturnType<typeof useShellStrings>['actionbarStrings']
+
+const renderMenuItems = (items: ActionbarStrings['menuItems'], isSubMenu?: boolean) => {
+  if (isSubMenu) {
+    return items.map((item, i) => {
+      if (item.subMenuItems.length > 0) {
+
+        return (
+          <DropdownMenuSub key={i}>
+            <DropdownMenuSubTrigger className='text-[1.25ch]'>
+              { item.title }
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent className='min-w-content'>
+                { renderMenuItems(item.subMenuItems, true) }
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+        )
+      }
+      
+      return (
+        <DropdownMenuItem 
+          asChild
+          className='text-[1.25ch]' 
+          key={i}>
+          <Link to={ item.href ?? '#' }>
+            { item.title }
+          </Link>
+        </DropdownMenuItem>
+      )
+    })
+  }
+
+  return items.map((item, i) => {
+    return <RBPIMenubarMenu key={i} item={item} />
+  })
+}
+
+const RBPIMenubarMenu = ({ item }: { item: ActionbarStrings['menuItems'][number] }) => {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <MenubarMenu>
+      { item.subMenuItems.length > 0 && 
+        (
+          <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger asChild>
+              <MenubarTrigger onMouseEnter={() => setOpen(true)} className='font-normal'>
+                { item.title }
+              </MenubarTrigger>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className='min-w-[20ch]' align="start">
+              { renderMenuItems(item.subMenuItems, true) }          
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) ||
+        (
+          <MenubarTrigger className='font-normal'>
+            { item.title }
+          </MenubarTrigger>
+        ) }
+    </MenubarMenu>
+  )
+}
+
 export function RBPIActionbar(props: RBPIActionbarProps) {
   const { actionbarStrings } = useShellStrings()
-  const actions = {}
 
-  const renderMenuItems = (items: typeof actionbarStrings.menuItems, isSubMenu?: boolean) => {
-    if (isSubMenu) {
-      return items.map((item, i) => {
-        if (item.subMenuItems instanceof Array) {
-          return (
-            <DropdownMenuSub key={i}>
-              <DropdownMenuSubTrigger>
-                { item.title }
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent>
-                  { renderMenuItems(item.subMenuItems, true) }
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-          )
-        }
-        
-        return (
-          <DropdownMenuItem key={i}>
-            { item.title }
-          </DropdownMenuItem>
-        )
-      })
-    }
 
-    return items.map((item, i) => (
-      <MenubarMenu key={i}>
-        { item.subMenuItems instanceof Array && 
-          (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <MenubarTrigger className='font-normal'>
-                  { item.title }
-                </MenubarTrigger>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                { renderMenuItems(item.subMenuItems, true) }          
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) ||
-          (
-            <MenubarTrigger className='font-normal'>
-              { item.title }
-            </MenubarTrigger>
-          ) }
-      </MenubarMenu>
-    ))
-  }
 
   return (
     <div id='rbpi-actionbar' className={'m-1 sticky top-1'}>
       <Menubar 
         className='bg-white'>
-        {renderMenuItems(actionbarStrings.menuItems)}
+        { renderMenuItems(actionbarStrings.menuItems) }
 
         <div className='flex-1'></div>
 

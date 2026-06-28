@@ -1,12 +1,9 @@
 
-import { Route } from "./+types/_user.$id.a.$org.l.je";
-import { useQuery } from "@tanstack/react-query";
-import { useLegacyRpcClient } from "@/context/RBPIClientRPCProvider";
-import { StatusCodes } from "http-status-codes";
 import { BreadcrumbHandle } from "@components/breadcrumb";
-import { DefaultFilterSelect } from "@components/controls/filters";
 import { StatsView } from "@components/cards/kpis";
-import { JournalsTable, RBPIJournalsTable } from "@components/tables/JournalsTable";
+import { DefaultFilterSelect } from "@components/controls/filters";
+import { RBPIJournalsTable } from "@components/tables/JournalsTable";
+import { Route } from "./+types/_user.$id.a.$org.l.je";
 
 export const handle: BreadcrumbHandle = {
   breadcrumb: {

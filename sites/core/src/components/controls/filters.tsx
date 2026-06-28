@@ -2,29 +2,31 @@ import { useLegacyRpcClient } from '@/context/RBPIClientRPCProvider';
 import { Button } from '@shadcn/base/components/ui/button';
 import { ButtonGroup } from '@shadcn/base/components/ui/button-group';
 import { Calendar } from '@shadcn/base/components/ui/calendar';
-import { 
-  Combobox, 
-  ComboboxContent, 
-  ComboboxEmpty, 
-  ComboboxInput,
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
   ComboboxItem,
   ComboboxList,
   ComboboxTrigger,
-  ComboboxValue,
+  ComboboxValue
 } from '@shadcn/base/components/ui/combobox';
 
 import { Field, FieldContent, FieldLabel } from '@shadcn/base/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@shadcn/base/components/ui/popover';
+import { ScrollArea } from "@shadcn/base/components/ui/scroll-area";
 import { Skeleton } from '@shadcn/base/components/ui/skeleton';
 import { Calendar1Icon } from '@shadcn/base/icons';
 import { cn } from '@shadcn/base/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { format, subDays } from 'date-fns';
-import { PropsWithChildren, useMemo, useState } from 'react';
+import { PropsWithChildren, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { branchesView } from '~/db/legacy/schema';
+import { createUniqueId } from '~/platform-core/helpers/struct';
+import { getRBPIBranchesResponseSchema } from '~/platform-legacy/rpc/handlers/specs/accounting';
+import { useAppStrings } from '~/values/strings/app';
 import { useFormControlStrings } from '~/values/strings/controls';
-
 type BranchFilterSelectProps = PropsWithChildren<{
   
 }>
@@ -180,7 +182,9 @@ export function CutOffDateSelect() {
         { controlStrings.accountingPeriodStrings.label }
       </FieldLabel>
       <FieldContent>
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover 
+          open={open} 
+          onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <ButtonGroup>
               <Button
@@ -229,5 +233,134 @@ export function DefaultFilterSelect(props: DefaultFilterSelectProps) {
       <BranchFilterSelect />
       <CutOffDateSelect />
     </div>
+  )
+}
+
+type TextDateBranchPickerProps = {
+  className?: string
+  onSelect?: (date: Date, branch?: RBPICore.Legacy.AccountingBranchesView) => void
+}
+
+export function TextDateBranchPicker({
+  className,
+  onSelect,
+}: TextDateBranchPickerProps) {
+  const appStrings = useAppStrings()
+
+  const client = useLegacyRpcClient()
+  const priorDay = subDays(new Date(), 1)
+  const [open, setOpen] = useState(false)
+  const [date, setDate] = useState(priorDay)
+  const [branch, setBranch] = useState<RBPICore.Legacy.AccountingBranchesView>()
+  const queryKey = useMemo(() => createUniqueId(), [])
+
+  const { 
+    data, 
+    isPending: isBranchesPending,
+  } = useQuery({
+    queryKey: [queryKey],
+    queryFn: async () => {
+      const res = await client.rbpi.branches.$get({
+        query: {
+
+        },
+      })
+
+      if (res.ok) {
+        const json = await res.json()
+        return getRBPIBranchesResponseSchema.parse(json)
+      }
+
+    },
+  })
+
+  const branches = useMemo(() => data?.data ?? [], [ data ])
+
+  useEffect(() => { onSelect?.(date, branch) }, [ date, branch ])
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        asChild>
+        <Button
+          variant={'link'}
+          className={cn('p-0 cursor-pointer font-normal gap-0!', className)}>
+          <div className={
+            cn(
+              isBranchesPending ? 'inline-flex items-center gap-1.5' : ''
+            )
+          }>
+            <time dateTime={date.toJSON()} className='text-zinc-800'>
+              { format(date, 'yyyy/MM/dd') }
+            </time>
+            {' '}
+            { isBranchesPending ?
+              (
+                <Skeleton className='w-[4.5ch] h-6' />
+              ) :
+              (
+                <data className='uppercase font-medium'>
+                  { branch ? (
+                    <span>{ branch.shortName }</span>
+                  ) : (
+                    <span>{ appStrings.keywords.all }</span>
+                  ) }
+                </data>
+              ) }
+          </div>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent 
+        className='w-max'
+        updatePositionStrategy='optimized' 
+        align='start'>
+        <div className='space-y-2.5 p-1 flex gap-1.5'>
+          <Field>
+            <FieldLabel 
+              className='uppercase text-xs text-zinc-400'
+              htmlFor={`${queryKey}_calendarPicker`}>
+              { appStrings.timeRelatedStrings.referenceDate }
+            </FieldLabel>
+            <Calendar
+              id={`${queryKey}_calendarPicker`}
+              mode='single'
+              selected={date}
+              defaultMonth={date}
+              captionLayout='dropdown'
+              disabled={{ after: new Date() }}
+              onSelect={(date) => {
+                setDate(date ?? priorDay)
+              }}>
+            </Calendar>
+          </Field>
+          <Field>
+            <FieldLabel 
+              className='uppercase text-xs text-zinc-400'
+              htmlFor={`${queryKey}_branchSelector`}>
+              { appStrings.keywords.branch }
+            </FieldLabel>
+            <ScrollArea className='h-65 no-scrollbar'>
+              <div className='flex flex-col'>
+                <Button
+                  onClick={() => setBranch(undefined)}
+                  className='justify-start cursor-pointer font-normal'
+                  variant={'ghost'}>
+                  { appStrings.keywords.all }
+                </Button>
+                { branches.map((branch, i) => (
+                  <Button
+                    onClick={() => setBranch(branch)}
+                    className='justify-start cursor-pointer font-normal'
+                    variant={'ghost'}
+                    key={i}>
+                    { branch.name.split(' ').at(0) } ({ branch.shortName })
+                  </Button>
+                )) }
+              </div>
+            </ScrollArea>
+          </Field>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }

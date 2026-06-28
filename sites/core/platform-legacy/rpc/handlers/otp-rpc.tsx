@@ -4,24 +4,24 @@
 // It is hardcoded in this source file, so when things get updated, this source file needs to be 
 // rebuild with the platform.
 
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { OpenAPIHono } from "@hono/zod-openapi";
 import { getEmployeeById, getEmployeeByUsername } from "~/platform-legacy/functions/internal";
 
-import { StatusCodes } from "http-status-codes"
+import { StatusCodes } from "http-status-codes";
 import { isNotFound } from "~/db/errors";
 import { createMailerClient } from "~/platform-legacy/helpers/mailer";
 
-import { render } from 'react-email'
-import { getBase64FileMeta, getRandomIntWebCrypto } from "~/platform-legacy/helpers/utils";
-import { setSignedCookie } from "hono/cookie";
-import { uneval } from "devalue";
 import { users } from "@schema/users";
+import { uneval } from "devalue";
 import { eq } from "drizzle-orm";
-import { 
-  addLegacyUserToOrganization, 
+import { setSignedCookie } from "hono/cookie";
+import { render } from 'react-email';
+import {
+  addLegacyUserToOrganization,
   getRbpiOrganization,
 } from "~/platform-core/functions/internal";
 import { createNumericId, createUniqueId } from "~/platform-core/helpers/struct";
+import { getBase64FileMeta, getRandomIntWebCrypto } from "~/platform-legacy/helpers/utils";
 import { generateOtpRoute, validateOtpRoute } from "./specs/otp";
 
 const otpRpc = new OpenAPIHono<HonoCloudflare>()
@@ -91,7 +91,7 @@ const otpRpc = new OpenAPIHono<HonoCloudflare>()
     if (actual && req.input === Number(actual)) {
       const employee = await getEmployeeById(db.legacy, req.id)
       const json = await ctx.env.KV.get(`${ req.id }_data`)
-      const data = eval(`(${json ?? 'null'})`) as RBPICore.Legacy.GeneralEmployee | null
+      const data = eval(`(${json ?? 'null'})`) as RBPICore.Legacy.HREmployeesView | null
 
       if (employee.isErr()) {
         return ctx.json({}, StatusCodes.FAILED_DEPENDENCY)
@@ -201,4 +201,4 @@ const otpRpc = new OpenAPIHono<HonoCloudflare>()
     return ctx.json({}, StatusCodes.FORBIDDEN)
   })
 
-export { otpRpc }
+export { otpRpc };

@@ -1,5 +1,4 @@
 import { BreadcrumbHandle } from "@components/breadcrumb";
-import { AuthCurrency } from "@components/currency";
 import { Outlet } from "react-router";
 
 export const handle: BreadcrumbHandle = {

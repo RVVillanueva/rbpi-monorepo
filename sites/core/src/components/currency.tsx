@@ -1,4 +1,5 @@
 import { useRBPIAuthContext } from "@/context/RBPIAuthProvider";
+import { cn } from "@shadcn/base/lib/utils";
 
 export function AuthCurrency({
   amount,
@@ -88,5 +89,5 @@ export function Currency({
     }).format(amount);
   };
 
-  return <data value={amount}>{ format() }</data>
+  return <data value={amount} className={cn(amount === 0 ? 'text-zinc-500' : '')}>{ format() }</data>
 }

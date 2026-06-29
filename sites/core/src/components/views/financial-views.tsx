@@ -1,18 +1,21 @@
 
+import { useRBPIAccountingContext } from "@/context/RBPIAccountingContextProvider";
 import { useRBPIAuthContext } from "@/context/RBPIAuthProvider";
 import { BalanceSheetTable } from '@components/tables/BalanceSheetViewTable';
-import { IncomeStatementTable } from '@components/tables/IncomeStatementView';
+import { IncomeStatementTable } from '@components/tables/IncomeStatementViewTable';
 import { UnadjustTrialBalanceTable, WorkingTrialBalanceTable } from '@components/tables/TrialBalanceViewTable';
 import { Button } from '@shadcn/base/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@shadcn/base/components/ui/dropdown-menu';
 import { RotateCcwIcon } from '@shadcn/base/icons';
 import { cn } from '@shadcn/base/lib/utils';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useSearchParams } from "react-router";
+import { TrialBalanceResult } from "~/platform-legacy/functions/internal";
 import { useAppStrings } from '~/values/strings/app';
 
 enum TrialBalanceViewFormat {
-  UNADJTB = 0,
-  WTD = 1
+  UNADJTB = 'unadjtb',
+  WTB = 'wtb'
 }
 
 type TrialBalanceViewProps = {
@@ -23,7 +26,8 @@ export function TrialBalanceView({}: TrialBalanceViewProps) {
   const auth = useRBPIAuthContext()
   const org = auth.getOrganizationProfile()!
   const appStrings = useAppStrings()
-  const [format, setFormat] = useState<TrialBalanceViewFormat>(TrialBalanceViewFormat.WTD)
+  const [search, setSearchParams] = useSearchParams()
+  const [format, setFormat] = useState(search.get('format') as TrialBalanceViewFormat)
 
   if (!org) {
     return
@@ -37,7 +41,6 @@ export function TrialBalanceView({}: TrialBalanceViewProps) {
   return (
     <div className={
       cn(
-        'min-h-screen w-[90ch] min-w-[90ch]',
         'mx-auto grid grid-rows-[auto_1fr] gap-1',
       )
     }>
@@ -55,10 +58,22 @@ export function TrialBalanceView({}: TrialBalanceViewProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent className='w-max'>
               <DropdownMenuLabel className='capitalize'>{ appStrings.keywords.trialBalanceAcronym } { appStrings.buttons.appFormat }</DropdownMenuLabel>
-              <DropdownMenuItem onSelect={() => setFormat(TrialBalanceViewFormat.UNADJTB)}>
+              <DropdownMenuItem onSelect={() => {
+                setFormat(TrialBalanceViewFormat.UNADJTB)
+                setSearchParams(prev => {
+                  prev.set('format', TrialBalanceViewFormat.UNADJTB)
+                  return prev
+                })
+              }}>
                 { unadjustedTrialBalanceString }
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setFormat(TrialBalanceViewFormat.WTD)}>
+              <DropdownMenuItem onSelect={() => {
+                setFormat(TrialBalanceViewFormat.WTB)
+                setSearchParams(prev => {
+                  prev.set('format', TrialBalanceViewFormat.WTB)
+                  return prev
+                })
+              }}>
                 { workingTrialBalanceString } ({ workingTrialBalanceAcronymString })
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -75,20 +90,20 @@ export function TrialBalanceView({}: TrialBalanceViewProps) {
         </div>
       </div>
       <article className='bg-white min-h-full shadow ring-1 ring-zinc-300 p-[5ch]'>
-        <header className='space-y-1 h-[20ch]'>
+        <header className='space-y-1 h-[15ch]'>
           <h1 className='uppercase text-lg'>
             { org.name } <span className='uppercase text-zinc-500'>{ org.shortName }</span>
           </h1>
           {/* @TODO: Needs refactoring */}
           { format === TrialBalanceViewFormat.UNADJTB ? (
             <>
-              <p className='capitalize text-base'>
+              <p className='capitalize text-base text-zinc-600'>
                 { unadjustedTrialBalanceAltString }
               </p>
             </>
           ) : (
             <>
-              <p className='capitalize text-base'>
+              <p className='capitalize text-base text-zinc-600'>
                 { workingTrialBalanceString } ({ workingTrialBalanceAcronymString })
               </p>
             </>
@@ -124,7 +139,6 @@ export function BalanceSheetView({}: BalanceSheetViewProps) {
   return (
     <div className={
       cn(
-        'min-h-screen w-[90ch] min-w-[90ch]',
         'mx-auto grid grid-cols-1 grid-rows-[auto_1fr] gap-1',
       )
     }>
@@ -143,11 +157,11 @@ export function BalanceSheetView({}: BalanceSheetViewProps) {
         </div>
       </div>
       <article className='bg-white min-h-full shadow ring-1 ring-zinc-300 p-[5ch]'>
-        <header className='space-y-1 h-[20ch]'>
+        <header className='space-y-1 h-[15ch]'>
           <h1 className='uppercase text-lg'>
             { org.name } <span className='uppercase text-zinc-500'>{ org.shortName }</span>
           </h1>
-          <p className='capitalize text-base'>
+          <p className='capitalize text-base text-zinc-600'>
             { appStrings.keywords.balanceSheetStrings.simple }
           </p>
         </header>
@@ -175,7 +189,6 @@ export function IncomeStatementView({}: IncomeStatementViewProps) {
   return (
     <div className={
       cn(
-        'min-h-screen w-[90ch] min-w-[90ch]',
         'mx-auto grid grid-rows-[auto_1fr] gap-1',
       )
     }>
@@ -194,11 +207,11 @@ export function IncomeStatementView({}: IncomeStatementViewProps) {
         </div>
       </div>
       <article className='bg-white min-h-full shadow ring-1 ring-zinc-300 p-[5ch]'>
-        <header className='space-y-1 h-[20ch]'>
+        <header className='space-y-1 h-[15ch]'>
           <h1 className='uppercase text-lg'>
             { org.name } <span className='uppercase text-zinc-500'>{ org.shortName }</span>
           </h1>
-          <p className='capitalize text-base'>
+          <p className='capitalize text-base text-zinc-600'>
             { appStrings.keywords.incomeStatementStrings.simple } ({ appStrings.keywords.incomeStatementAltAcronym })
           </p>
         </header>

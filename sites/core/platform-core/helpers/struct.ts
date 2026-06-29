@@ -86,3 +86,17 @@ export const unwrapValue = (v: Value | undefined) => {
   default:            return null
   }
 }
+
+export const getRowByPath = <T extends { children: T[] }>(data: T[], path: string): T | undefined => {
+  const indices = path.split('.').map(Number)
+  let current = data
+  let result: T | undefined
+
+  for (const i of indices) {
+    result = current[i]
+    if (!result) return undefined
+    current = result.children
+  }
+
+  return result
+}

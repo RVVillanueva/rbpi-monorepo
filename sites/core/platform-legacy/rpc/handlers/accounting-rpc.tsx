@@ -12,6 +12,7 @@ import {
   getRBPIGlAccountByCodeRoute,
   getRBPIGlAccountJournalEntriesRoute,
   getRBPIGlAccountsRoute,
+  getRBPIGlAccountSummaryRoute,
   getRBPIIncomeStatementRoute,
   getRBPIJournalAuditRoute,
   getRBPIJournalAuthorsRoute,
@@ -98,7 +99,7 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
     
     return ctx.json({ account }, StatusCodes.OK)
   })
-
+ 
   .openapi(getRBPIJournalEntryByIdRoute, async ctx => {
 
     return ctx.json({}, StatusCodes.BAD_REQUEST)
@@ -428,5 +429,4 @@ const accountingRpc = new OpenAPIHono<HonoCloudflare>()
     return ctx.json(res, StatusCodes.OK)
   })
 
-export { accountingRpc };
-
+export { accountingRpc }

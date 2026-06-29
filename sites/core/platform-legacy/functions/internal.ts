@@ -1,5 +1,5 @@
 import { format, startOfYear } from "date-fns";
-import { and, between, eq, getViewName, inArray, notInArray, SQL, sql, sum } from "drizzle-orm";
+import { and, between, eq, getViewName, gte, inArray, lte, notInArray, or, SQL, sql, sum } from "drizzle-orm";
 
 import { err, ok } from "neverthrow";
 import { AppLoadContext } from "react-router";
@@ -229,6 +229,7 @@ export interface TrialBalanceResult {
     debit: number
     credit: number
     netMovement: number
+    totalBalance: number
   },
   children: TrialBalanceResult[]
 }
@@ -310,6 +311,8 @@ export const computeFullTrialBalanceFigures = async (
       }])
     )
 
+    const balanceMap = await getAllAccumulatedGlAccountsBalances(hono, period, branchId)
+
     const buildTree = (accounts: typeof allAccounts): TrialBalanceResult[] => {
       return accounts.map(account => {
         const childs = childsMap.get(account.code) ?? []
@@ -335,6 +338,7 @@ export const computeFullTrialBalanceFigures = async (
             debit: ownSummary.debit + rolledUp.debit,
             credit: ownSummary.credit + rolledUp.credit,
             netMovement: ownSummary.netMovement + rolledUp.netMovement,
+            totalBalance: balanceMap.get(account.code) ?? 0,
           },
           children,
         }
@@ -367,4 +371,94 @@ export const computeFullTrialBalanceFigures = async (
     periods: args.periods.map(period => period.toJSON()),
     results,
   }
+}
+
+const getAccumulatedGlAccountBalance = async (
+  hono: AppLoadContext['hono'],
+  glCode: number,
+  period: Date,
+  branchId: number | null,
+) => {
+  const db = hono.get('db')
+
+  const conditions = [
+    gte(journalAuditView.journalDate, sql`${format(startOfYear(period), 'yyyy-MM-dd')}`),
+    lte(journalAuditView.journalDate, sql`${format(period, 'yyyy-MM-dd')}`),
+    or(
+      eq(journalAuditView.glCode, glCode),
+      eq(journalAuditView.glParent, glCode),
+    ),
+  ]
+
+  if (branchId !== null && branchId !== 0) {
+    conditions.push(eq(journalAuditView.branchId, branchId))
+  } else {
+    conditions.push(
+      notInArray(
+        journalAuditView.glCode,
+        db.legacy
+          .select({ glCode: acctngGlaccounts.glCode })
+          .from(acctngGlaccounts)
+          .where(inArray(acctngGlaccounts.glParent, [108000, 203000]))
+      )
+    )
+  }
+
+  const [result] = await db.legacy
+    .select({ total: sum(journalAuditView.netMovement) })
+    .from(journalAuditView)
+    .where(and(...conditions))
+
+  return Number(result?.total ?? 0)
+}
+
+export const getAllAccumulatedGlAccountsBalances = async (
+  hono: AppLoadContext['hono'],
+  period: Date,
+  branchId: number | null,
+) => {
+  const db = hono.get('db')
+
+  const conditions = [
+    gte(journalAuditView.journalDate, sql`${format(startOfYear(period), 'yyyy-MM-dd')}`),
+    lte(journalAuditView.journalDate, sql`${format(period, 'yyyy-MM-dd')}`),
+  ]
+
+  if (branchId !== null && branchId !== 0) {
+    conditions.push(eq(journalAuditView.branchId, branchId))
+  } else {
+    conditions.push(
+      notInArray(
+        journalAuditView.glCode,
+        db.legacy
+          .select({ glCode: acctngGlaccounts.glCode })
+          .from(acctngGlaccounts)
+          .where(inArray(acctngGlaccounts.glParent, [108000, 203000]))
+      )
+    )
+  }
+
+  const rows = await db.legacy
+    .select({
+      glCode: journalAuditView.glCode,
+      glParent: journalAuditView.glParent,
+      total: sum(journalAuditView.netMovement),
+    })
+    .from(journalAuditView)
+    .where(and(...conditions))
+    .groupBy(journalAuditView.glCode, journalAuditView.glParent)
+
+  const balanceMap = new Map<number, number>()
+
+  for (const row of rows) {
+    const amount = Number(row.total ?? 0)
+
+    balanceMap.set(row.glCode, (balanceMap.get(row.glCode) ?? 0) + amount)
+
+    if (row.glParent) {
+      balanceMap.set(row.glParent, (balanceMap.get(row.glParent) ?? 0) + amount)
+    }
+  }
+
+  return balanceMap
 }

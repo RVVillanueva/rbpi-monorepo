@@ -4,6 +4,7 @@
     "allowJs": true,
     "strict": true,
     "resolveJsonModule": true,
+    "incremental": true,
     "tsBuildInfoFile": ".cache/tsbuildinfo",
     "skipLibCheck": true,
     "target": "es2022",
@@ -42,6 +43,8 @@
     ".react-router",
     "core/gen",
     "db/core/schema/index.ts",
-    ".cache"
+    ".cache",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ]
 }

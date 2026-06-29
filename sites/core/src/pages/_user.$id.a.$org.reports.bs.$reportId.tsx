@@ -14,7 +14,7 @@ export default function AccountingBalanceSheetReportPage() {
   return (
     <div>
       <section>
-        <span className='capitalize text-lg font-normal'>
+        <span className='capitalize text-base font-normal text-zinc-500'>
           { appStrings.keywords.balanceSheetStrings.simple }
         </span>
       </section>

@@ -30,6 +30,9 @@ export function useAppStrings() {
       consolidated: t('root.keywords.consolidated', 'Consolidated'),
       period: t('root.keywords.period', 'Period'),
 
+      total: t('root.keywords.total', 'Total'),
+      totals: t('root.keywords.total', 'Totals', { coount: 2 }),
+
       branch: t('root.keywords.branch', 'Branch'),
       branches: t('root.keywords.branch', 'Branches', { count: 2 }),
 
@@ -39,8 +42,10 @@ export function useAppStrings() {
       liabilitiesUnit: t('root.keywords.liabilities_unit', 'L'),
       equity: t('root.keywords.equity', 'Equity'),
       equityUnit: t('root.keywords.equity_unit', 'C'),
+      liabilitiesAndEquity: t('root.keywords_liabilities_and_equity', 'Liability & Equity'),
       expenses: t('root.keywords.expenses', 'Expenses'),
       expensesUnit: t('root.keywords.expenses_unit', 'E'),
+      revenues: t('root.keywords.revenues', 'Revenues'),
       income: t('root.keywords.income', 'Income'),
       incomeUnit: t('root.keywords.income_unit', 'I'),      
       netIncome: t('root.keywords.net_income', 'Net income'),
@@ -48,8 +53,8 @@ export function useAppStrings() {
       costCenters: t('root.keywords.cost_centers', 'Cost centers'),
       generalLedgerPrefix: t('root.keywords.general_ledger_prefix', 'GL'),
 
-      debits: t('root.keywords.debits', 'Debits'),
-      credits: t('root.keywords.credits', 'Credits'),
+      debit: t('root.keywords.debits', 'Debit'),
+      credit: t('root.keywords.credits', 'Credit'),
 
       debitsAcronym: t('root.keywords.debits_acronym', 'DR'),
       creditsAcronym: t('root.keywords.credits_acronym', 'CR'),
@@ -61,6 +66,7 @@ export function useAppStrings() {
       incomeStatementStrings: {
         simple: t('root.keywords.income_statement_strings.simple', 'Income statement'),
         alternative: t('root.keywords.income_statement_strings.alternative', 'Profit & loss'),
+        grossIncome: t('root.keywords.income_statement_strings.gross_profit', 'Gross Income'),
       },
 
       incomeStatementAcronym: t('root.keywords.income_statement_acronym', 'IS'),

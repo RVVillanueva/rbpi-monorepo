@@ -5,6 +5,7 @@ import {
   type ComputedFullTrialBalanceResult,
 } from "~/platform-legacy/functions/internal";
 
+
 export const getRBPIGlAccountsRoute = createRoute({
   method: 'get',
   path: '/rbpi/ledger/accounts',
@@ -21,6 +22,47 @@ export const getRBPIGlAccountsRoute = createRoute({
             z.custom<RBPICore.Legacy.AccountingGlAccountsView>(),
             "GetGlAccountsResponseSchema",
           ),
+        },
+      },
+      description: '',
+    },
+
+    [400]: {
+      content: {
+        'application/json': {
+          schema: z.object({}),
+        },
+      },
+      description: '',
+    },
+  },
+})
+
+export const getRBPIGlAccountSummaryRoute = createRoute({
+  method: 'get',
+  path: '/rbpi/ledger/accounts/{glCode}/accountSummary',
+  request: {
+    query: z.object({
+      accountingStartDate: z.coerce.date().optional(),
+      periods: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(arr => arr.map((d) => new Date(d))),
+        
+      branchIds: z
+        .string()
+        .transform(v => v.split(','))
+        .transform(ids => ids.map(d => Number(d)))
+        .optional(),
+    }),
+  },
+  responses: {
+    [200]: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            balance: z.coerce.number(),
+          }),
         },
       },
       description: '',
@@ -615,3 +657,4 @@ export const getRBPIFinancialSummary = createRoute({
     },
   },
 })
+

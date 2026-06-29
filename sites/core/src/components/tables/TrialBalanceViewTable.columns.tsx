@@ -1,23 +1,39 @@
-import { createUniqueId } from '~/platform-core/helpers/struct'
+import { createUniqueId, getRowByPath } from '~/platform-core/helpers/struct'
 
 import { TextDateBranchPicker } from '@components/controls/filters'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useMemo } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import type { TrialBalanceResult } from '~/platform-legacy/functions/internal'
 import { useAppStrings } from '~/values/strings/app'
+import { format, isAfter, isBefore, isEqual, subDays } from 'date-fns'
+import { LandmarkIcon } from '@shadcn/base/icons'
+import { AuthCurrency } from '@components/currency'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useLegacyRpcClient } from '@/context/RBPIClientRPCProvider'
+import { useHref } from 'react-router'
 
+export type TrialBalanceViewState = {
+  date: Date
+  branch?: RBPICore.Legacy.AccountingBranchesView
+}
+
+const accountColumnId = createUniqueId()
+const debitsColumnId = createUniqueId()
+const creditsColumnId = createUniqueId()
 
 export const useUnadjTrialBalanceViewTableColumns = () => {
   const appStrings = useAppStrings()
 
+  const [params, setParams] = useState<TrialBalanceViewState>({ date: subDays(new Date(), 1) })
+
   const columns = useMemo<ColumnDef<TrialBalanceResult>[]>(() => [
     {
-      id: createUniqueId(),
+      id: accountColumnId,
       header: () => {
 
         return (
-          <div>
-            
+          <div className='text-left'>
+            <TextDateBranchPicker {...params} onSelect={(date, branch) => setParams({ date, branch })} />
           </div>
         )
       },
@@ -26,20 +42,21 @@ export const useUnadjTrialBalanceViewTableColumns = () => {
         const { row } = args
         
         return (
-          <div>
-            
+          <div className='flex items-center gap-1.5'>
+            <LandmarkIcon size={16} strokeWidth={1} className='mb-1 text-zinc-800' />
+            <span>{ row.original.parent.name }</span>
           </div>
         )
       },
     },
     {
-      id: createUniqueId(),
+      id: debitsColumnId,
       size: 50,
       header: () => {
 
         return (
           <div>
-            { appStrings.keywords.debits }
+            { appStrings.keywords.debit }
           </div>
         )
       },
@@ -47,60 +64,101 @@ export const useUnadjTrialBalanceViewTableColumns = () => {
         const { row } = args
         
         return (
-          <div>
-
+          <div className='text-right'>
+            <AuthCurrency amount={row.original.accountSummary.debit} />
           </div>
         )
       },
     },
     {
-      id: createUniqueId(),
+      id: creditsColumnId,
       size: 50,
       header: () => {
 
         return (
-          <span>{ appStrings.keywords.credits }</span>
+          <span>{ appStrings.keywords.credit }</span>
         )
       },
       cell: args => {
         const { row } = args
-        
-        return (
-          <div>
 
+        return (
+          <div className='text-right'>
+            <AuthCurrency amount={row.original.accountSummary.credit} />
           </div>
         )
       },
     },
   ], [])
 
-  return columns
+  return { columns, params }
 }
+
+const wtbAccountColumnId = createUniqueId()
+const wtbBeginColumnId = createUniqueId()
+const wtbAdjDrColumnId = createUniqueId()
+const wtbAdjCrColumnId = createUniqueId()
+const wtbEndingColumnId = createUniqueId()
+
+const wtbEndDataQueryKey = createUniqueId()
 
 export const useWtdTrialBalanceViewTableColumns = () => {
   const appStrings = useAppStrings()
+  const client = useLegacyRpcClient()
+
+  const [beginParams, setBeginParams] = useState<TrialBalanceViewState>({ date: subDays(new Date(), 2) })
+  const [endingParams, setEndingParams] = useState<TrialBalanceViewState>({ date: subDays(new Date(), 1) })
+
+  const endDate = useMemo(() => endingParams.date, [ endingParams ])
+  const endBranchId = useMemo(() => endingParams.branch?.id, [ endingParams ])
+
+  const { data: endData, isPending: isEndDataPending } = useQuery({
+    queryKey: [wtbEndDataQueryKey, endDate, endBranchId],
+    queryFn: async () => {
+      const res = await client.rbpi.ledger.trialBalance.$get({
+        query: {
+          periods: [ format(endDate, 'yyyy/MM/dd') ].join(','),
+          branchIds: [ endingParams.branch?.id ?? 0 ].join(','),
+        },
+      })
+
+      if (res.ok) {
+        const json = await res.json()
+        return json
+      }
+    },
+
+    placeholderData: keepPreviousData,
+  })
   
+  const { trialBalanceData } = useMemo(() => endData?.results.at(-1) ?? { trialBalanceData: [] }, [ endData ])
+  const endDataRef = useRef<TrialBalanceResult[]>([])
+  endDataRef.current = trialBalanceData
+
   const columns = useMemo<ColumnDef<TrialBalanceResult>[]>(() => [
     {
-      id: createUniqueId(),
+      id: wtbAccountColumnId,
       cell: args => {
         const { row } = args
         
         return (
-          <div>
-
+          <div className='flex items-center gap-1.5'>
+            <LandmarkIcon size={16} strokeWidth={1} className='mb-1 text-zinc-800' />
+            <span>{ row.original.parent.name }</span>
           </div>
         )
       }
     },
     {
-      id: createUniqueId(),
+      id: wtbBeginColumnId,
       size: 100,
       header: () => {
 
         return (
           <div>
-            <TextDateBranchPicker />
+            <TextDateBranchPicker {...beginParams} onSelect={(date, branch) => {
+              setBeginParams({ date, branch })
+            }} />
           </div>
         )
       },
@@ -108,15 +166,15 @@ export const useWtdTrialBalanceViewTableColumns = () => {
         const { row } = args
         
         return (
-          <div>
-
+          <div className='text-right'>
+            <AuthCurrency amount={row.original.accountSummary?.totalBalance} />
           </div>
         )
       },
     },
     {
-      id: createUniqueId(),
-      size: 50,
+      id: wtbAdjDrColumnId,
+      size: 100,
       header: () => {
         
         return (
@@ -128,17 +186,19 @@ export const useWtdTrialBalanceViewTableColumns = () => {
       },
 
       cell: args => {
+        const { row } = args
+        const ending = getRowByPath(endDataRef.current, row.id)
 
         return (
-          <div>
-
+          <div className='text-right'>
+            <AuthCurrency amount={ending?.accountSummary.debit ?? 0} />
           </div>
         )
       },
     },
     {
-      id: createUniqueId(),
-      size: 50,
+      id: wtbAdjCrColumnId,
+      size: 100,
       header: () => {
         
         return (
@@ -150,35 +210,42 @@ export const useWtdTrialBalanceViewTableColumns = () => {
       },
 
       cell: args => {
+        const { row } = args
+        const ending = getRowByPath(endDataRef.current, row.id)!
 
         return (
-          <div>
-
+          <div className='text-right'>
+            <AuthCurrency amount={ending?.accountSummary.credit ?? 0} />
           </div>
         )
       },
     },
     {
-      id: createUniqueId(),
+      id: wtbEndingColumnId,
       size: 100,
       header: () => {
 
         return (
           <div>
-            <TextDateBranchPicker />
+            <TextDateBranchPicker {...endingParams} onSelect={(date, branch) => {
+              setEndingParams({ date, branch })
+            }} />
           </div>
         )
       },
       cell: args => {
+        const { row } = args
+        const ending = getRowByPath(endDataRef.current, row.id)
+        const endingBalanceValue = row.original.accountSummary.totalBalance + (ending?.accountSummary.netMovement ?? 0)
 
         return (
-          <div>
-
+          <div className='text-right'>
+            <AuthCurrency amount={endingBalanceValue} />
           </div>
         )
       },
     },
   ], [])
   
-  return columns
+  return { columns, beginParams, endingParams }
 }

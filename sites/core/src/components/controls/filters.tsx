@@ -238,20 +238,24 @@ export function DefaultFilterSelect(props: DefaultFilterSelectProps) {
 
 type TextDateBranchPickerProps = {
   className?: string
+  date?: Date
+  branch?: RBPICore.Legacy.AccountingBranchesView
   onSelect?: (date: Date, branch?: RBPICore.Legacy.AccountingBranchesView) => void
 }
 
 export function TextDateBranchPicker({
   className,
   onSelect,
+  date: defaultDate,
+  branch: defaultBranch,
 }: TextDateBranchPickerProps) {
   const appStrings = useAppStrings()
 
   const client = useLegacyRpcClient()
   const priorDay = subDays(new Date(), 1)
   const [open, setOpen] = useState(false)
-  const [date, setDate] = useState(priorDay)
-  const [branch, setBranch] = useState<RBPICore.Legacy.AccountingBranchesView>()
+  const [date, setDate] = useState(defaultDate ?? priorDay)
+  const [branch, setBranch] = useState<RBPICore.Legacy.AccountingBranchesView | undefined>(defaultBranch)
   const queryKey = useMemo(() => createUniqueId(), [])
 
   const { 
@@ -276,8 +280,6 @@ export function TextDateBranchPicker({
 
   const branches = useMemo(() => data?.data ?? [], [ data ])
 
-  useEffect(() => { onSelect?.(date, branch) }, [ date, branch ])
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
@@ -290,7 +292,7 @@ export function TextDateBranchPicker({
               isBranchesPending ? 'inline-flex items-center gap-1.5' : ''
             )
           }>
-            <time dateTime={date.toJSON()} className='text-zinc-800'>
+            <time dateTime={format(date, 'yyyy/MM/dd')} className='text-zinc-800'>
               { format(date, 'yyyy/MM/dd') }
             </time>
             {' '}
@@ -329,6 +331,7 @@ export function TextDateBranchPicker({
               captionLayout='dropdown'
               disabled={{ after: new Date() }}
               onSelect={(date) => {
+                onSelect?.(date ?? priorDay, branch)
                 setDate(date ?? priorDay)
               }}>
             </Calendar>
@@ -342,14 +345,20 @@ export function TextDateBranchPicker({
             <ScrollArea className='h-65 no-scrollbar'>
               <div className='flex flex-col'>
                 <Button
-                  onClick={() => setBranch(undefined)}
+                  onClick={() => {
+                    onSelect?.(date ?? priorDay, undefined)
+                    setBranch(undefined)
+                  }}
                   className='justify-start cursor-pointer font-normal'
                   variant={'ghost'}>
                   { appStrings.keywords.all }
                 </Button>
                 { branches.map((branch, i) => (
                   <Button
-                    onClick={() => setBranch(branch)}
+                    onClick={() => { 
+                      onSelect?.(date ?? priorDay, branch)
+                      setBranch(branch)
+                    }}
                     className='justify-start cursor-pointer font-normal'
                     variant={'ghost'}
                     key={i}>

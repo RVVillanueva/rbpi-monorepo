@@ -1,11 +1,13 @@
+"$schema" = "./node_modules/wrangler/config-schema.json"
 name = 'core'
-main = 'dist/_worker.js'
-compatibility_date = '2026-06-02'
-compatibility_flags = ['nodejs_compat', 'experimental']
+main = './dist/server/index.js'
+compatibility_date = '2026-04-27'
+compatibility_flags = ['nodejs_compat']
 
 [assets]
-directory = 'dist'
 binding = 'ASSETS'
+directory = './dist/client'
+not_found_handling = 'none'
 
 [[kv_namespaces]]
 binding = "KV"
@@ -13,14 +15,6 @@ id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 [observability]
 enabled = true
-
-[[hyperdrive]]
-binding = "LEGACY"
-id = ""
-
-[[hyperdrive]]
-binding = "CORE"
-id = ""
 
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"

@@ -15,7 +15,7 @@ export default function AccountingIncomeStatementReportPage() {
     <div>
       <section>
         <span className='capitalize text-base font-normal text-zinc-500'>
-          { appStrings.keywords.incomeStatementStrings.simple }
+          { appStrings.keywords.incomeStatementStrings.simple } ({ appStrings.timeRelatedStrings.yearToDateAcronym })
         </span>
       </section>
 

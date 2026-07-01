@@ -311,7 +311,7 @@ export const computeFullTrialBalanceFigures = async (
       }])
     )
 
-    const balanceMap = await getAllAccumulatedGlAccountsBalances(hono, period, branchId)
+    const balanceMap = await getAllAccumulatedGlAccountsBalances(hono, period, branchId, allAccounts)
 
     const buildTree = (accounts: typeof allAccounts): TrialBalanceResult[] => {
       return accounts.map(account => {
@@ -416,6 +416,7 @@ export const getAllAccumulatedGlAccountsBalances = async (
   hono: AppLoadContext['hono'],
   period: Date,
   branchId: number | null,
+  allAccounts: RBPICore.Legacy.AccountingGlAccountsView[],
 ) => {
   const db = hono.get('db')
 
@@ -448,15 +449,39 @@ export const getAllAccumulatedGlAccountsBalances = async (
     .where(and(...conditions))
     .groupBy(journalAuditView.glCode, journalAuditView.glParent)
 
+  const childrenOf = new Set<number>()
+  for (const account of allAccounts) {
+    if (account.parent) childrenOf.add(account.parent)
+  }
+
   const balanceMap = new Map<number, number>()
 
   for (const row of rows) {
+    // Only seed from leaf accounts
+    if (childrenOf.has(row.glCode)) continue
+
     const amount = Number(row.total ?? 0)
-
     balanceMap.set(row.glCode, (balanceMap.get(row.glCode) ?? 0) + amount)
+  }
 
-    if (row.glParent) {
-      balanceMap.set(row.glParent, (balanceMap.get(row.glParent) ?? 0) + amount)
+  const parentOf = new Map<number, number>()
+  for (const account of allAccounts) {
+    if (account.parent) parentOf.set(account.code, account.parent)
+  }
+
+  const leafEntries = [...balanceMap.entries()]
+
+  for (const [glCode, amount] of leafEntries) {
+    // Only roll up from leaves (accounts that are not parents of anyone)
+    if (childrenOf.has(glCode)) continue
+
+    let parent = parentOf.get(glCode)
+    const visited = new Set<number>()
+
+    while (parent && !visited.has(parent)) {
+      visited.add(parent)
+      balanceMap.set(parent, (balanceMap.get(parent) ?? 0) + amount)
+      parent = parentOf.get(parent)
     }
   }
 

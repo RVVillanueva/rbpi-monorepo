@@ -26,9 +26,6 @@ export function AccountsChartTable({ accountType, accounts }: AccountsChartTable
 
   const rows = table.getRowModel().rows
 
-  const totalDebits = useMemo(() => accounts.reduce((total, current) => total+current.accountSummary.debit, 0), [ accounts ])
-  const totalCredits = useMemo(() => accounts.reduce((total, current) => total+current.accountSummary.credit, 0), [ accounts ])
-
   return (
     <div>
       <Table
@@ -56,7 +53,7 @@ export function AccountsChartTable({ accountType, accounts }: AccountsChartTable
             </TableRow>
           )) }
         </TableHeader>
-        <TableBody className='bg-zinc-100 text-xs text-zinc-900'>
+        <TableBody className='bg-zinc-100 text-sm text-zinc-900'>
           { rows?.length ? (
             rows.map(row => (
                 <TableRow
@@ -85,7 +82,7 @@ export function AccountsChartTable({ accountType, accounts }: AccountsChartTable
           }
         </TableBody>
 
-        <TableFooter className='text-xs border-t-0'>
+        <TableFooter className='text-sm border-t-0'>
           <TableRow className='border-t-0 bg-transparent'>
             <TableCell>
               

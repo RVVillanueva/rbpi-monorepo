@@ -94,6 +94,8 @@ export const mediaMiddleware = createMiddleware<HonoCloudflare>(async (ctx, next
 
     const buf = await object.arrayBuffer()
     const headers = new Headers()
+
+    console.log(key)
     
     headers.set('etag', object.httpEtag)
     headers.set('content-type', object.httpMetadata?.contentType ?? 'application/octet-stream')

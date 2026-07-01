@@ -28,8 +28,8 @@ mysql2-legacy.restore:
 	pv ${DB_BACKUP} | gunzip | mysqldump -h 127.0.0.1 -P3306 -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME}
 
 mysql2-legacy.migrate:
+	$(MAKE) mysql2-legacy.restore-migration
 	bunx drizzle-kit migrate --config ./db/legacy/drizzle.config.ts
-	$(MAKE) mysql2-legacy.migration-dump
 
 mysql2-legacy.check:
 	bunx drizzle-kit check --config ./db/legacy/drizzle.config.ts
@@ -64,10 +64,13 @@ test:
 dev:
 	CLOUDFLARE_ENV=development pnpm dev
 
+expose:
+	CLOUDFLARE_ENV=staging pnpm dev.stage
+
 build:
 	CLOUDFLARE_ENV=production pnpm build
 
-email.dev:
+email.dev:	
 	pnpm email.dev
 
 boot: dev email.dev

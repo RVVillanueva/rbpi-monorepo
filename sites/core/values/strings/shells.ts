@@ -107,6 +107,14 @@ export function useShellStrings() {
                   subMenuItems: [],
                   href: `/${userId}/a/${orgId}/reports/is/${createUniqueId()}`,
                 },
+                {
+                  title: t(
+                    'root.shells.action_bar.menu_items.reports.financial_reports.cash_flow_statement',
+                    'Cash Flow Statement',
+                  ),
+                  subMenuItems: [],
+                  href: `/${userId}/a/${orgId}/reports/cfs/${createUniqueId()}`,
+                },
               ],
             },
             

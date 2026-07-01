@@ -1,25 +1,27 @@
-import { createUniqueId, getRowByPath } from '~/platform-core/helpers/struct'
+import { getRowByPath } from '~/platform-core/helpers/struct'
 
+import { Button } from '@shadcn/base/components/ui/button'
 import { TextDateBranchPicker } from '@components/controls/filters'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useMemo, useState, useRef } from 'react'
 import type { TrialBalanceResult } from '~/platform-legacy/functions/internal'
 import { useAppStrings } from '~/values/strings/app'
-import { format, isAfter, isBefore, isEqual, subDays } from 'date-fns'
+import { format, subDays } from 'date-fns'
 import { LandmarkIcon } from '@shadcn/base/icons'
 import { AuthCurrency } from '@components/currency'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useLegacyRpcClient } from '@/context/RBPIClientRPCProvider'
-import { useHref } from 'react-router'
+
+import { Link } from 'react-router'
 
 export type TrialBalanceViewState = {
   date: Date
   branch?: RBPICore.Legacy.AccountingBranchesView
 }
 
-const accountColumnId = createUniqueId()
-const debitsColumnId = createUniqueId()
-const creditsColumnId = createUniqueId()
+const accountColumnId = 'account'
+const debitsColumnId = 'debits'
+const creditsColumnId = 'credits'
 
 export const useUnadjTrialBalanceViewTableColumns = () => {
   const appStrings = useAppStrings()
@@ -65,7 +67,15 @@ export const useUnadjTrialBalanceViewTableColumns = () => {
         
         return (
           <div className='text-right'>
-            <AuthCurrency amount={row.original.accountSummary.debit} />
+            <Button
+              size={'sm'}
+              variant={'link'}
+              asChild
+              className='p-0'>
+              <Link to={'#'}>
+                <AuthCurrency amount={row.original.accountSummary.debit} />
+              </Link>
+            </Button>
           </div>
         )
       },
@@ -84,7 +94,15 @@ export const useUnadjTrialBalanceViewTableColumns = () => {
 
         return (
           <div className='text-right'>
-            <AuthCurrency amount={row.original.accountSummary.credit} />
+            <Button
+              size={'sm'}
+              variant={'link'}
+              asChild
+              className='p-0'>
+              <Link to={'#'}>
+                <AuthCurrency amount={row.original.accountSummary.credit} />
+              </Link>
+            </Button>
           </div>
         )
       },
@@ -94,13 +112,12 @@ export const useUnadjTrialBalanceViewTableColumns = () => {
   return { columns, params }
 }
 
-const wtbAccountColumnId = createUniqueId()
-const wtbBeginColumnId = createUniqueId()
-const wtbAdjDrColumnId = createUniqueId()
-const wtbAdjCrColumnId = createUniqueId()
-const wtbEndingColumnId = createUniqueId()
-
-const wtbEndDataQueryKey = createUniqueId()
+const wtbAccountColumnId = 'wtbAccount'
+const wtbBeginColumnId = 'wtbBegin'
+const wtbAdjDrColumnId = 'wtbAdjDr'
+const wtbAdjCrColumnId = 'wtbAdjCr'
+const wtbEndingColumnId = 'wtbEnding'
+const wtbEndDataQueryKey = 'wtbEndDataQuery'
 
 export const useWtdTrialBalanceViewTableColumns = () => {
   const appStrings = useAppStrings()
@@ -167,7 +184,15 @@ export const useWtdTrialBalanceViewTableColumns = () => {
         
         return (
           <div className='text-right'>
-            <AuthCurrency amount={row.original.accountSummary?.totalBalance} />
+            <Button
+              size={'sm'}
+              variant={'link'}
+              asChild
+              className='p-0'>
+              <Link to={'#'}>
+                <AuthCurrency amount={row.original.accountSummary?.totalBalance} />
+              </Link>
+            </Button>
           </div>
         )
       },
@@ -191,7 +216,15 @@ export const useWtdTrialBalanceViewTableColumns = () => {
 
         return (
           <div className='text-right'>
-            <AuthCurrency amount={ending?.accountSummary.debit ?? 0} />
+            <Button
+              size={'sm'}
+              variant={'link'}
+              asChild
+              className='p-0'>
+              <Link to={'#'}>
+                <AuthCurrency amount={ending?.accountSummary.debit ?? 0} />
+              </Link>
+            </Button>
           </div>
         )
       },
@@ -215,7 +248,15 @@ export const useWtdTrialBalanceViewTableColumns = () => {
 
         return (
           <div className='text-right'>
-            <AuthCurrency amount={ending?.accountSummary.credit ?? 0} />
+            <Button
+              size={'sm'}
+              variant={'link'}
+              asChild
+              className='p-0'>
+              <Link to={'#'}>
+                <AuthCurrency amount={ending?.accountSummary.credit ?? 0} />
+              </Link>
+            </Button>
           </div>
         )
       },
@@ -240,12 +281,20 @@ export const useWtdTrialBalanceViewTableColumns = () => {
 
         return (
           <div className='text-right'>
-            <AuthCurrency amount={endingBalanceValue} />
+            <Button
+              size={'sm'}
+              variant={'link'}
+              asChild
+              className='p-0'>
+              <Link to={'#'}>
+                <AuthCurrency amount={endingBalanceValue} />
+              </Link>
+            </Button>
           </div>
         )
       },
     },
   ], [])
   
-  return { columns, beginParams, endingParams }
+  return { columns, beginParams, endingParams, endDataRef }
 }

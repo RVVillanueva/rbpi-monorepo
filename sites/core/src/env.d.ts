@@ -29,6 +29,7 @@ interface CloudflareEnv {
   readonly BA_URL: string
   readonly RPC_URL: string
   readonly LEGACY_RPC_URL: string
+  readonly BYPASS_OTP: number
   readonly CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_LEGACY: string
   readonly CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_CORE: string
   readonly CLOUDFLARE_ACCOUNT_ID: string

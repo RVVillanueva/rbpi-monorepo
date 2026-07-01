@@ -48,8 +48,9 @@ export default defineConfig(args => {
   return {
     plugins: [
       yaml(),
-      cloudflareDevProxy({
+      cloudflareDevProxy({ 
         environment: mode,
+        envFiles: [`.env.${mode}`],
       }),
       reactRouterHonoServer(reactRouterHonoServerOptions),
       reactRouter(),
@@ -64,8 +65,14 @@ export default defineConfig(args => {
 
     server: {
       allowedHosts: [
-        'automatically-priorities-compliance-perfume.trycloudflare.com'
+        '.romvales.com',
       ],
+    },
+
+    build: {
+      rollupOptions: {
+        
+      },
     },
   }
 })

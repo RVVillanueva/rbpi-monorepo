@@ -77,39 +77,6 @@ export const costCentersView = mysqlView('cost_centers_view')
       .from(acctngCostCenter),
   )
 
-export type AcctngJournal = typeof glJournalsView.$inferSelect
-
-// @SQLVIEW: Journal entries
-export const glJournalsView = mysqlView('gl_journals_view')
-  .as(
-    qb => qb
-      .select({
-        id: acctngJournals.journalid.as('id'),
-        journalDate: acctngJournals.journalDate.as('journal_date'),
-        journalBranch: acctngJournals.journalBranch.as('journal_branch'),
-        glCode: acctngJournaldetails.glCode.as('gl_code'),
-        glType: acctngGlaccounts.glType.as('gl_type'),
-        glLevel: acctngGlaccounts.glLevel.as('gl_level'),
-        glParent: acctngGlaccounts.glParent.as('gl_parent'),
-        frpCode: acctngGlaccounts.frpcode.as('frp_code'),
-        glName: acctngGlaccounts.glName.as('gl_name'),
-        debit: acctngJournaldetails.journalDetailsDebit.as('debit'),
-        credit: acctngJournaldetails.journalDetailsCredit.as('credit'),
-        netMovement: sql<number>`
-          CASE
-            WHEN ${acctngGlaccounts.glType} IN ('A', 'E')
-              THEN COALESCE(${acctngJournaldetails.journalDetailsDebit}, 0) - COALESCE(${acctngJournaldetails.journalDetailsCredit}, 0)
-            WHEN ${acctngGlaccounts.glType} IN ('L', 'C', 'I')
-              THEN COALESCE(${acctngJournaldetails.journalDetailsCredit}, 0) - COALESCE(${acctngJournaldetails.journalDetailsDebit}, 0)
-            ELSE 0
-          END
-        `.as('net_movement')
-      })
-      .from(acctngJournals)
-      .innerJoin(acctngJournaldetails, eq(acctngJournaldetails.journalid, acctngJournals.journalid))
-      .innerJoin(acctngGlaccounts, eq(acctngGlaccounts.glCode, acctngJournaldetails.glCode))
-  )
-
 export type JournalAuditView = typeof journalAuditView.$inferSelect
 
 // @SQLVIEW: Journal entries with maker info

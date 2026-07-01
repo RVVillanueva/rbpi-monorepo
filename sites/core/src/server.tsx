@@ -17,7 +17,9 @@ const reactRouter = await createHonoServer<HonoCloudflare>({
 })
 
 // createHono creates a new hono instance with the "core" attached to it.
-export const createHono = () => new Hono<HonoCloudflare>().use(core)
+export const createHono = () => new Hono<HonoCloudflare>().use(
+  core,
+)
 
 export const withSentry = (mux: ReturnType<typeof main>) => {
   return Sentry.withSentry(

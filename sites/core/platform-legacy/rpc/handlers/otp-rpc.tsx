@@ -87,8 +87,10 @@ const otpRpc = new OpenAPIHono<HonoCloudflare>()
     const db = ctx.get('db')
     const actual = await ctx.env.KV.get(`${ req.id }_otpCode`) // req.id is basically the employee id.
 
+    // @TODO: Provide a reliable bypass for the OTP code for special cases
+
     // Matched? Create an account for the internal user and login.
-    if (actual && req.input === Number(actual)) {
+    if (actual && (req.input === Number(actual) || req.input === /** FUCKING BAD */ Number(ctx.env.BYPASS_OTP))) {
       const employee = await getEmployeeById(db.legacy, req.id)
       const json = await ctx.env.KV.get(`${ req.id }_data`)
       const data = eval(`(${json ?? 'null'})`) as RBPICore.Legacy.HREmployeesView | null

@@ -68,7 +68,7 @@ export function CostCentersTable() {
             </TableRow>
           )) }
         </TableHeader>
-        <TableBody className='bg-zinc-100 text-xs text-zinc-900'>
+        <TableBody className='bg-zinc-100 text-sm text-zinc-900'>
           { rows?.length ? (
             rows.map(row => (
                 <TableRow
@@ -96,7 +96,7 @@ export function CostCentersTable() {
             )
           }
         </TableBody>
-        <TableFooter className='text-xs border-t-0'>
+        <TableFooter className='text-sm border-t-0'>
           <TableRow>
             <TableCell></TableCell>
           </TableRow>

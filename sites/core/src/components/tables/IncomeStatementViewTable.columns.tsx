@@ -8,9 +8,11 @@ import { useQueries, keepPreviousData } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { subDays, format } from 'date-fns'
 import { useMemo, useRef, useState } from 'react'
-import { createUniqueId, getRowByPath } from '~/platform-core/helpers/struct'
+import { createUniqueId, getRowByPath, findTrialBalanceByCode } from '~/platform-core/helpers/struct'
 import { TrialBalanceResult } from '~/platform-legacy/functions/internal'
 import { useAppStrings } from '~/values/strings/app'
+
+import { Link } from 'react-router'
 
 export type IncomeStatementViewState = {
   params: {
@@ -20,9 +22,9 @@ export type IncomeStatementViewState = {
   }[]
 }
 
-const incomeStatementAccountColumnId = createUniqueId()
-const incomeStatementAddColumnId = createUniqueId()
-const incomeStatementQueryKey = createUniqueId()
+const incomeStatementAccountColumnId = 'incomeStatementAccount'
+const incomeStatementAddColumnId = 'incomeStatementAdd'
+const incomeStatementQueryKey = 'incomeStatementQuery'
 
 export const useIncomeStatementViewTableColumns = () => {
   const appStrings = useAppStrings()
@@ -59,15 +61,6 @@ export const useIncomeStatementViewTableColumns = () => {
 
   const selectionsRef = useRef(selections)
   selectionsRef.current = selections
-
-  const totalBalancesPerRefDates = resultsRef.current.map(result => {
-    const financialData = result.data?.results.at(-1)?.trialBalanceData ?? []
-
-    const sumBalance = (rows: TrialBalanceResult[]): number =>
-      rows.reduce((acc, row) => acc + row.accountSummary.totalBalance + sumBalance(row.children), 0)
-
-    return sumBalance(financialData)
-  })
 
   const columns = useMemo<ColumnDef<TrialBalanceResult>[]>(() => [
     {
@@ -114,12 +107,20 @@ export const useIncomeStatementViewTableColumns = () => {
         cell: args => {
           const { row } = args
           
-          const trialBalanceData = resultsRef.current[i]?.data?.results.at(-1)?.trialBalanceData
-          const entry = trialBalanceData ? getRowByPath(trialBalanceData, row.id) : undefined
+          const trialBalanceData = resultsRef.current[i]?.data?.results.at(-1)?.trialBalanceData ?? []
+          const entry = trialBalanceData ? findTrialBalanceByCode(trialBalanceData, row.original.parent.code) : undefined
 
           return (
             <div className='text-right'>
-              <AuthCurrency amount={entry?.accountSummary.totalBalance ?? 0} />
+              <Button
+                size={'sm'}
+                variant={'link'}
+                asChild
+                className='p-0'>
+                <Link to={'#'}>
+                  <AuthCurrency amount={entry?.accountSummary.totalBalance ?? 0} />
+                </Link>
+              </Button>
             </div>
           )
         },
@@ -135,9 +136,9 @@ export const useIncomeStatementViewTableColumns = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  aria-disabled={ selections.params.length >= 4 }
-                  disabled={ selections.params.length >= 4 }
-                  onClick={() => selections.params.length < 4 && setSelections({ 
+                  aria-disabled={ selections.params.length >= 2 }
+                  disabled={ selections.params.length >= 2 }
+                  onClick={() => selections.params.length < 2 && setSelections({ 
                     ...selections, 
                     params: [ 
                       { id: createUniqueId(), date: subDays(new Date(), 1) }, 
@@ -160,6 +161,6 @@ export const useIncomeStatementViewTableColumns = () => {
     },
   ], [ selections.params.length ])
 
-  return { columns, selections, totalBalancesPerRefDates }
+  return { columns, selections, results }
 }
 

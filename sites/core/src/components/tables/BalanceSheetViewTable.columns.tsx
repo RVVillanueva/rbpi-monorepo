@@ -12,6 +12,8 @@ import { createUniqueId, getRowByPath } from '~/platform-core/helpers/struct'
 import { TrialBalanceResult } from '~/platform-legacy/functions/internal'
 import { useAppStrings } from '~/values/strings/app'
 
+import { Link } from 'react-router'
+
 export type BalanceSheetViewState = {
   params: {
     id: string
@@ -20,9 +22,9 @@ export type BalanceSheetViewState = {
   }[]
 }
 
-const balanceSheetAccountColumnId = createUniqueId()
-const balanceSheetAddColumnId = createUniqueId()
-const balanceSheetQueryKey = createUniqueId()
+const balanceSheetAccountColumnId = 'balanceSheetAccount'
+const balanceSheetAddColumnId = 'balanceSheetAdd'
+const balanceSheetQueryKey = 'balanceSheetQuery'
 
 export const useBalanceSheetViewTableColumns = () => {
   const appStrings = useAppStrings()
@@ -59,15 +61,6 @@ export const useBalanceSheetViewTableColumns = () => {
 
   const selectionsRef = useRef(selections)
   selectionsRef.current = selections
-
-  const totalBalancesPerRefDates = resultsRef.current.map(result => {
-    const financialData = result.data?.results.at(-1)?.trialBalanceData ?? []
-
-    const sumBalance = (rows: TrialBalanceResult[]): number =>
-      rows.reduce((acc, row) => acc + row.accountSummary.totalBalance + sumBalance(row.children), 0)
-
-    return sumBalance(financialData)
-  })
 
   const columns = useMemo<ColumnDef<TrialBalanceResult>[]>(() => [
     {
@@ -116,7 +109,15 @@ export const useBalanceSheetViewTableColumns = () => {
 
           return (
             <div className='text-right'>
-              <AuthCurrency amount={entry?.accountSummary.totalBalance ?? 0} />
+              <Button
+                size={'sm'}
+                variant={'link'}
+                asChild
+                className='p-0'>
+                <Link to={'#'}>
+                  <AuthCurrency amount={entry?.accountSummary.totalBalance ?? 0} />
+                </Link>
+              </Button>
             </div>
           )
         },
@@ -133,9 +134,9 @@ export const useBalanceSheetViewTableColumns = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  aria-disabled={ selections.params.length >= 4 }
-                  disabled={ selections.params.length >= 4 }
-                  onClick={() => selections.params.length < 4 && setSelections({ 
+                  aria-disabled={ selections.params.length >= 2 }
+                  disabled={ selections.params.length >= 2 }
+                  onClick={() => selections.params.length < 2 && setSelections({ 
                     ...selections, 
                     params: [ 
                       { id: createUniqueId(), date: subDays(new Date(), 1) }, 
@@ -158,5 +159,5 @@ export const useBalanceSheetViewTableColumns = () => {
     },
   ], [ selections.params.length ])
 
-  return { columns, totalBalancesPerRefDates }
+  return { columns, selections, results }
 }

@@ -12,10 +12,15 @@ import { invitations, members, organizationRoles, organizations, teamMembers, te
 import { getUserById } from '~/platform-core/functions/internal';
 
 export const createAuthFromDatabase = (db: Database, env: CloudflareBindings) => {
+
   const auth = betterAuth({
     secret: env.BA_SECRET,
     baseURL: env.BA_URL,
     basePath: '/',
+
+    trustedOrigins: [
+      import.meta.env.SITE_URL,
+    ],
 
     plugins: [
       admin(),
@@ -72,6 +77,7 @@ export const createAuthFromDatabase = (db: Database, env: CloudflareBindings) =>
     },
 
     advanced: {
+      trustedProxyHeaders: true,
       useSecureCookies: env.WORKER_ENV === 'production',
       cookiePrefix: 'rb',
       cookies: {

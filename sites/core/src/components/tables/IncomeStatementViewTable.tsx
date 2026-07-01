@@ -5,9 +5,10 @@ import { TrialBalanceResult } from '~/platform-legacy/functions/internal';
 import { useRBPIAccountingContext } from '@/context/RBPIAccountingContextProvider';
 import { useAppStrings } from '~/values/strings/app';
 import { useMemo } from 'react';
+import { AuthCurrency } from '@components/currency';
 
 export function IncomeStatementTable() {
-  const { columns, selections, totalBalancesPerRefDates } = useIncomeStatementViewTableColumns()
+  const { columns, results } = useIncomeStatementViewTableColumns()
 
   const rbpi = useRBPIAccountingContext()
   const appStrings = useAppStrings()
@@ -29,6 +30,29 @@ export function IncomeStatementTable() {
     getCoreRowModel: getCoreRowModel(),
   })
 
+  const totalGrossIncomePerDates = useMemo(() => {
+    return results.map(result => {
+      const trialBalanceData = result.data?.results?.at(-1)?.trialBalanceData ?? []
+      return trialBalanceData
+        .filter(account => account.parent.type === 'I')
+        .reduce((total, account) => total+account.accountSummary.totalBalance, 0)
+    })
+  }, [ results ])
+
+  const totalExpensesPerDates = useMemo(() => {
+    return results.map(result => {
+      const trialBalanceData = result.data?.results?.at(-1)?.trialBalanceData ?? []
+      return trialBalanceData
+        .filter(account => account.parent.type === 'E')
+        .reduce((total, account) => total+account.accountSummary.totalBalance, 0)
+    })
+  }, [ results ])
+
+
+  const totalNetIncomePerDates = useMemo(() => {
+    return totalGrossIncomePerDates.map((income, i) => income-totalExpensesPerDates[i])
+  }, [ totalGrossIncomePerDates ])
+
   const incomeRows = incomeTable.getRowModel().rows
   const expensesRows = expensesTable.getRowModel().rows
 
@@ -38,7 +62,7 @@ export function IncomeStatementTable() {
         <TableHeader>
           { incomeTable.getHeaderGroups().map((headerGroup) => (
             <TableRow
-              className='border-b-0!'
+              className='border-b-0'
               key={headerGroup.id}>
               { headerGroup.headers.map(header => {
                 return (
@@ -75,7 +99,7 @@ export function IncomeStatementTable() {
               return (  
                 <TableRow
                   key={row.id}
-                  className="border-0 bg-white text-xs"
+                  className="border-0 bg-white text-sm even:bg-zinc-100"
                   aria-selected={row.getIsSelected()}
                   data-state={row.getIsSelected() && 'selected'}>
                   { row.getVisibleCells().map(cell => {
@@ -109,8 +133,13 @@ export function IncomeStatementTable() {
                 { appStrings.keywords.incomeStatementStrings.grossIncome }
               </span>
             </TableCell>
-            <TableCell colSpan={ incomeTable.getAllColumns().length-1 }>
-
+            { totalGrossIncomePerDates.map((totalGrossIncome, i) => (
+              <TableCell key={i} className='text-right' colSpan={ (incomeTable.getAllColumns().length-2) - totalGrossIncomePerDates.length }>
+                <AuthCurrency amount={totalGrossIncome} />
+              </TableCell>
+            )) }
+            <TableCell>
+              
             </TableCell>
           </TableRow>
 
@@ -127,7 +156,7 @@ export function IncomeStatementTable() {
               return (  
                 <TableRow
                   key={row.id}
-                  className="border-0 bg-white text-xs"
+                  className="border-0 bg-white text-sm even:bg-zinc-100"
                   aria-selected={row.getIsSelected()}
                   data-state={row.getIsSelected() && 'selected'}>
                   { row.getVisibleCells().map(cell => {
@@ -154,15 +183,34 @@ export function IncomeStatementTable() {
           }
 
           <TableRow className='border-0 h-10'>
-            <TableCell 
-              className='text-right'
-              >
+            <TableCell className='text-right'>
+              <span className='text-sm uppercase text-zinc-500'>
+                { appStrings.keywords.total } { appStrings.keywords.expenses }
+              </span>
+            </TableCell>
+            { totalExpensesPerDates.map((totalExpense, i) => (
+              <TableCell key={i} className='text-right' colSpan={ (expensesTable.getAllColumns().length-2) - totalExpensesPerDates.length }>
+                <AuthCurrency amount={totalExpense} />
+              </TableCell>
+            )) }
+            <TableCell>
+              
+            </TableCell>
+          </TableRow>
+
+          <TableRow className='border-0 h-10'>
+            <TableCell>
               <span className='text-sm uppercase text-zinc-500'>
                 { appStrings.keywords.netIncome }
               </span>
             </TableCell>
-            <TableCell colSpan={ incomeTable.getAllColumns().length-1 }>
-
+            { totalNetIncomePerDates.map((totalNetIncome, i) => (
+              <TableCell key={i} className='text-right' colSpan={ (incomeTable.getAllColumns().length-2) - totalNetIncomePerDates.length }>
+                <AuthCurrency amount={totalNetIncome} />
+              </TableCell>
+            )) }
+            <TableCell>
+              
             </TableCell>
           </TableRow>
         </TableBody>

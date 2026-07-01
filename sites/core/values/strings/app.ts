@@ -89,6 +89,12 @@ export function useAppStrings() {
 
     timeRelatedStrings: {
       referenceDate: t('root.keywords.time_related_strings.reference_date', 'Reference date'),
+      yearToDate: t('root.keywords.time_related_strings.year_to_date', 'Year to date'),
+      monthToDate: t('root.keywords.time_related_strings.month_to_date', 'Month to date'),
+      quarterToDate: t('root.keywords.time_related_strings.quarter_to_date', 'Quarter to date'),
+      yearToDateAcronym: t('root.keywords.time_related_strings.year_to_date_acronym', 'YTD'),
+      monthToDateAcronym: t('root.keywords.time_related_strings.month_to_date_acronym', 'MTD'),
+      quarterToDateAcronym: t('root.keywords.time_related_strings.quarter_to_date_acronym', 'QTD'),
     },
   }), [t])
 }

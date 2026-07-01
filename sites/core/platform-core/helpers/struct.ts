@@ -1,6 +1,7 @@
 import { DescMessage, fromJson as from, JsonObject, MessageShape, type JsonValue } from '@bufbuild/protobuf'
 import { Value } from '@bufbuild/protobuf/wkt'
 import { nanoid } from 'nanoid'
+import { TrialBalanceResult } from '~/platform-legacy/functions/internal'
 
 export function createUniqueId() {
   return nanoid(42)
@@ -99,4 +100,13 @@ export const getRowByPath = <T extends { children: T[] }>(data: T[], path: strin
   }
 
   return result
+}
+
+export const findTrialBalanceByCode = (data: TrialBalanceResult[], code: number): TrialBalanceResult | undefined => {
+  for (const item of data) {
+    if (item.parent.code === code) return item
+    const found = findTrialBalanceByCode(item.children, code)
+    if (found) return found
+  }
+  return undefined
 }

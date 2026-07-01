@@ -35,9 +35,11 @@ export function Currency({
   locale = 'en-PH',
   compact = false,
   digits = compact ? 1 : 2,
+  showCurrencySign = false,
 }: {
   amount: number
   currency?: string
+  showCurrencySign?: boolean
   locale?: string
   compact?: boolean
   digits?: number
@@ -72,21 +74,25 @@ export function Currency({
       }
     }
 
-    if (amount < 0) {
-      return `(${ new Intl.NumberFormat(locale, {
+    let formattedAmount: string
+
+    if (showCurrencySign) {
+      formattedAmount = new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
         minimumFractionDigits: digits,
         maximumFractionDigits: digits,
-      }).format(-amount) })`
+      }).format(amount < 0 ? -amount : amount);
     }
 
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
+    formattedAmount = new Intl.NumberFormat(locale, {
       minimumFractionDigits: digits,
       maximumFractionDigits: digits,
-    }).format(amount);
+    }).format(amount < 0 ? -amount : amount);
+
+    if (amount < 0) return `(${formattedAmount})`
+
+    return formattedAmount
   };
 
   return <data value={amount} className={cn(amount === 0 ? 'text-zinc-500' : '')}>{ format() }</data>

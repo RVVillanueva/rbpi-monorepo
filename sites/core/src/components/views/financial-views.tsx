@@ -41,7 +41,7 @@ export function TrialBalanceView({}: TrialBalanceViewProps) {
   return (
     <div className={
       cn(
-        'mx-auto grid grid-rows-[auto_1fr] gap-1',
+        'mx-auto grid grid-rows-[auto_1fr] gap-1 w-[100ch]',
       )
     }>
       <div className='flex justify-between items-center'>
@@ -90,7 +90,7 @@ export function TrialBalanceView({}: TrialBalanceViewProps) {
         </div>
       </div>
       <article className='bg-white min-h-full shadow ring-1 ring-zinc-300 p-[5ch]'>
-        <header className='space-y-1 h-[15ch]'>
+        <header className='space-y-1 h-[12ch]'>
           <h1 className='uppercase text-lg'>
             { org.name } <span className='uppercase text-zinc-500'>{ org.shortName }</span>
           </h1>
@@ -104,7 +104,7 @@ export function TrialBalanceView({}: TrialBalanceViewProps) {
           ) : (
             <>
               <p className='capitalize text-base text-zinc-600'>
-                { workingTrialBalanceString } ({ workingTrialBalanceAcronymString })
+                { appStrings.timeRelatedStrings.yearToDateAcronym } - { workingTrialBalanceString } ({ workingTrialBalanceAcronymString })
               </p>
             </>
           ) }
@@ -139,7 +139,7 @@ export function BalanceSheetView({}: BalanceSheetViewProps) {
   return (
     <div className={
       cn(
-        'mx-auto grid grid-cols-1 grid-rows-[auto_1fr] gap-1',
+        'mx-auto grid grid-cols-1 grid-rows-[auto_1fr] gap-1 max-w-[100ch]',
       )
     }>
       <div className='flex justify-between items-center'>
@@ -157,12 +157,12 @@ export function BalanceSheetView({}: BalanceSheetViewProps) {
         </div>
       </div>
       <article className='bg-white min-h-full shadow ring-1 ring-zinc-300 p-[5ch]'>
-        <header className='space-y-1 h-[15ch]'>
+        <header className='space-y-1 h-[12ch]'>
           <h1 className='uppercase text-lg'>
             { org.name } <span className='uppercase text-zinc-500'>{ org.shortName }</span>
           </h1>
           <p className='capitalize text-base text-zinc-600'>
-            { appStrings.keywords.balanceSheetStrings.simple }
+            { appStrings.timeRelatedStrings.yearToDateAcronym } - { appStrings.keywords.balanceSheetStrings.simple }
           </p>
         </header>
         <div>
@@ -187,11 +187,12 @@ export function IncomeStatementView({}: IncomeStatementViewProps) {
   }
 
   return (
-    <div className={
-      cn(
-        'mx-auto grid grid-rows-[auto_1fr] gap-1',
-      )
-    }>
+    <div 
+      className={
+        cn(
+          'mx-auto grid grid-rows-[auto_1fr] gap-1 max-w-[100ch] min-h-max',
+        )
+      }>
       <div className='flex justify-between items-center'>
         <div>
           
@@ -206,13 +207,13 @@ export function IncomeStatementView({}: IncomeStatementViewProps) {
           </Button>
         </div>
       </div>
-      <article className='bg-white min-h-full shadow ring-1 ring-zinc-300 p-[5ch]'>
-        <header className='space-y-1 h-[15ch]'>
+      <article id='printArea' className='bg-white min-h-full shadow ring-1 ring-zinc-300 p-[5ch]'>
+        <header className='space-y-1 h-[12ch]'>
           <h1 className='uppercase text-lg'>
             { org.name } <span className='uppercase text-zinc-500'>{ org.shortName }</span>
           </h1>
           <p className='capitalize text-base text-zinc-600'>
-            { appStrings.keywords.incomeStatementStrings.simple } ({ appStrings.keywords.incomeStatementAltAcronym })
+            { appStrings.timeRelatedStrings.yearToDateAcronym } - { appStrings.keywords.incomeStatementStrings.simple } ({ appStrings.keywords.incomeStatementAltAcronym })
           </p>
         </header>
         <div>
@@ -222,5 +223,3 @@ export function IncomeStatementView({}: IncomeStatementViewProps) {
     </div>
   )
 }
-
-

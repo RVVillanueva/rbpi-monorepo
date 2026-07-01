@@ -3,6 +3,8 @@ import { ExpandedState, flexRender, getCoreRowModel, useReactTable } from '@tans
 import { useBalanceSheetViewTableColumns } from './BalanceSheetViewTable.columns';
 import { useAppStrings } from '~/values/strings/app';
 
+import { AuthCurrency } from '@components/currency';
+
 import type { TrialBalanceResult } from '~/platform-legacy/functions/internal';
 import { useMemo, useState } from 'react';
 import { useRBPIAccountingContext } from '@/context/RBPIAccountingContextProvider';
@@ -12,14 +14,15 @@ export function BalanceSheetTable() {
   const appStrings = useAppStrings()
 
   const trialBalanceDatasets = useMemo(() => rbpi.trialBalanceData?.results.at(-1)?.trialBalanceData ?? [] as TrialBalanceResult[], [ rbpi ])
-  
+  const isPending = useMemo(() => rbpi.isTrialBalanceDataPending, [ rbpi ])
+
   const assets = useMemo(() => trialBalanceDatasets.filter(account => account.parent.type === 'A'), [ rbpi ])
   const liabilities = useMemo(() => trialBalanceDatasets.filter(account => account.parent.type === 'L'), [ rbpi ])
   const equity = useMemo(() => trialBalanceDatasets.filter(account => account.parent.type === 'C'), [ rbpi ])
 
-  const { columns, totalBalancesPerRefDates } = useBalanceSheetViewTableColumns()
+  const { columns, results } = useBalanceSheetViewTableColumns()
 
-  const [expanded, setExpanded] = useState<ExpandedState>(true)
+  const [expanded, setExpanded] = useState<ExpandedState>({})
   const assetsTable = useReactTable({
     data: assets,
     columns,
@@ -47,6 +50,33 @@ export function BalanceSheetTable() {
     onExpandedChange: setExpanded,
   })
 
+  const totalAssetsPerDates = useMemo(() => {
+    return results.map(result => {
+      const trialBalanceData = result.data?.results?.at(-1)?.trialBalanceData ?? []
+      return trialBalanceData
+        .filter(account => account.parent.type === 'A')
+        .reduce((total, account) => total+account.accountSummary.totalBalance, 0)
+    })
+  }, [ results ])
+
+  const totalLiabilitiesPerDates = useMemo(() => {
+    return results.map(result => {
+      const trialBalanceData = result.data?.results?.at(-1)?.trialBalanceData ?? []
+      return trialBalanceData
+        .filter(account => account.parent.type === 'L')
+        .reduce((total, account) => total+account.accountSummary.totalBalance, 0)
+    })
+  }, [ results ])
+
+  const totalEquityPerDates = useMemo(() => {
+    return results.map(result => {
+      const trialBalanceData = result.data?.results?.at(-1)?.trialBalanceData ?? []
+      return trialBalanceData
+        .filter(account => account.parent.type === 'C')
+        .reduce((total, account) => total+account.accountSummary.totalBalance, 0)
+    })
+  }, [ results ])
+
   const assetRows = assetsTable.getRowModel().rows
   const liabilitiesRows = liabilitiesTable.getRowModel().rows
   const equityRows = equityTable.getRowModel().rows
@@ -54,10 +84,10 @@ export function BalanceSheetTable() {
   return (
     <div className='relative space-y-2'>
       <Table>
-        <TableHeader>
+        <TableHeader className='border-0'>
           { assetsTable.getHeaderGroups().map((headerGroup) => (
             <TableRow
-              className='border-b-0!'
+              className='border-b-0'
               key={headerGroup.id}>
               { headerGroup.headers.map(header => {
                 return (
@@ -81,12 +111,22 @@ export function BalanceSheetTable() {
 
         <TableBody className=' text-zinc-900'>
 
-          <TableRow className='border-0'>
-            <TableCell colSpan={ assetsTable.getAllColumns().length }>
-              <div className='bg-zinc-100 text-zinc-500 text-center p-1 uppercase'>
-                <h2>{ appStrings.keywords.assets }</h2>
-              </div>
-            </TableCell>
+          <TableRow>
+            <TableCell colSpan={ assetsTable.getAllColumns().length }></TableCell>
+          </TableRow>
+
+            <TableRow className='border-0'>
+              <TableCell 
+                className='p-0'
+                colSpan={ assetsTable.getAllColumns().length }>
+                <div className='bg-zinc-200 text-zinc-500 text-center p-1 uppercase'>
+                  <h2>{ appStrings.keywords.assets }</h2>
+                </div>
+              </TableCell>
+            </TableRow>
+
+          <TableRow>
+            <TableCell colSpan={ assetsTable.getAllColumns().length }></TableCell>
           </TableRow>
 
           { assetRows?.length ? (
@@ -94,7 +134,7 @@ export function BalanceSheetTable() {
               return (  
                 <TableRow
                   key={row.id}
-                  className="border-0 bg-white text-xs"
+                  className="border-0 bg-white text-sm even:bg-zinc-100"
                   aria-selected={row.getIsSelected()}
                   data-state={row.getIsSelected() && 'selected'}>
                   { row.getVisibleCells().map(cell => {
@@ -126,37 +166,54 @@ export function BalanceSheetTable() {
                 { appStrings.keywords.total } { appStrings.keywords.assets }
               </span>
             </TableCell>
+            { totalAssetsPerDates.map((totalAssets, i) => (
+              <TableCell key={i} className='text-right' colSpan={ (assetsTable.getAllColumns().length-2) - totalAssetsPerDates.length }>
+                <AuthCurrency amount={totalAssets} />
+              </TableCell>
+            )) }
+            <TableCell>
+              
+            </TableCell>
+          </TableRow>
+
+          <TableRow>
+            <TableCell colSpan={ liabilitiesTable.getAllColumns().length }></TableCell>
           </TableRow>
 
           <TableRow className='border-0'>
-            <TableCell colSpan={ assetsTable.getAllColumns().length }>
-              <div className='bg-zinc-100 text-zinc-500 text-center p-1 uppercase'>
+            <TableCell 
+              className='p-0'
+              colSpan={ assetsTable.getAllColumns().length }>
+              <div className='bg-zinc-200/90 text-zinc-500 text-center p-1 uppercase'>
                 <h2>{ appStrings.keywords.liabilitiesAndEquity }</h2>
               </div>
             </TableCell>
           </TableRow>
 
+          <TableRow>
+            <TableCell colSpan={ equityTable.getAllColumns().length }></TableCell>
+          </TableRow>
+
           <TableRow className='border-0'>
             <TableCell colSpan={ assetsTable.getAllColumns().length }>
               <div>
-                <span className='text-xs uppercase text-zinc-500'>{ appStrings.keywords.liabilities }</span>
+                <span className='text-sm uppercase text-zinc-500'>{ appStrings.keywords.liabilities }</span>
               </div>
             </TableCell>
           </TableRow>
           
           { liabilitiesRows?.length ? (
             liabilitiesRows.map(row => {
-              return (  
+              return (
                 <TableRow
                   key={row.id}
-                  className="border-0 bg-white text-xs"
+                  className="border-0 bg-white text-sm even:bg-zinc-100"
                   aria-selected={row.getIsSelected()}
                   data-state={row.getIsSelected() && 'selected'}>
                   { row.getVisibleCells().map(cell => {
-
                     return (
                       <TableCell 
-                        className='align-top pt-2' 
+                        className='align-top pt-2 pl-[3ch]' 
                         key={cell.id}>
                         { flexRender(cell.column.columnDef.cell, cell.getContext()) }
                       </TableCell>
@@ -181,12 +238,20 @@ export function BalanceSheetTable() {
                 { appStrings.keywords.total } { appStrings.keywords.liabilities }
               </span>
             </TableCell>
+            { totalLiabilitiesPerDates.map((totalLiabilities, i) => (
+              <TableCell key={i} className='text-right' colSpan={ (liabilitiesTable.getAllColumns().length-2) - totalLiabilitiesPerDates.length }>
+                <AuthCurrency amount={totalLiabilities} />
+              </TableCell>
+            )) }
+            <TableCell>
+              
+            </TableCell>
           </TableRow>
 
           <TableRow className='border-0'>
             <TableCell colSpan={ assetsTable.getAllColumns().length }>
               <div>
-                <span className='text-xs uppercase text-zinc-500'>{ appStrings.keywords.equity }</span>
+                <span className='text-sm uppercase text-zinc-500'>{ appStrings.keywords.equity }</span>
               </div>
             </TableCell>
           </TableRow>
@@ -196,14 +261,14 @@ export function BalanceSheetTable() {
               return (  
                 <TableRow 
                   key={row.id}
-                  className="border-0 bg-white text-xs"
+                  className="border-0 bg-white text-sm even:bg-zinc-100"
                   aria-selected={row.getIsSelected()}
                   data-state={row.getIsSelected() && 'selected'}>
                   { row.getVisibleCells().map(cell => {
 
                     return (
                       <TableCell 
-                        className='align-top pt-2' 
+                        className='align-top pt-2 pl-[3ch]' 
                         key={cell.id}>
                         { flexRender(cell.column.columnDef.cell, cell.getContext()) }
                       </TableCell>
@@ -227,6 +292,14 @@ export function BalanceSheetTable() {
               <span>
                 { appStrings.keywords.total } { appStrings.keywords.equity }
               </span>
+            </TableCell>
+            { totalEquityPerDates.map((totalEquity, i) => (
+              <TableCell key={i} className='text-right' colSpan={ (equityTable.getAllColumns().length-2) - totalEquityPerDates.length }>
+                <AuthCurrency amount={totalEquity} />
+              </TableCell>
+            )) }
+            <TableCell>
+              
             </TableCell>
           </TableRow>
 

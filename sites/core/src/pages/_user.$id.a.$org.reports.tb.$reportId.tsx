@@ -15,7 +15,7 @@ export default function AccountingTrialBalanceReportPage() {
     <div>
       <section>
         <span className='capitalize text-base font-normal text-zinc-500'>
-          { appStrings.keywords.trialBalanceStrings.simple }
+          { appStrings.keywords.trialBalanceStrings.simple } ({ appStrings.timeRelatedStrings.yearToDateAcronym })
         </span>
       </section>
       

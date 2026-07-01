@@ -19,3 +19,37 @@ body {
 [data-slot="dialog-overlay"] {
   backdrop-filter: none !important;
 }
+
+@media print {
+  body * {
+    display: none !important;
+  }
+
+  #printArea,
+  #printArea * {
+    display: block !important;
+  }
+
+  #app:has(#printArea),
+  #app:has(#printArea), *:has(#printArea) {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* neutralize the scroll container so nothing gets clipped */
+  .table-container {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  tr { break-inside: avoid; }
+  thead { display: table-header-group; }
+
+  [data-radix-scroll-area-viewport] {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}
